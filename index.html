@@ -49,13 +49,28 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 .syn-row{border-top:1px solid var(--line);padding:8px 0}
 .syn-row:first-child{border-top:0}
 
+
+.history-box{
+ background:#f3f4f6;
+ color:#666;
+ border-radius:12px;
+ padding:10px;
+ margin-top:8px;
+ font-size:13px;
+}
+.history-item{
+ padding:7px 0;
+ border-bottom:1px solid rgba(0,0,0,.06);
+ cursor:pointer;
+}
+.history-item:last-child{border-bottom:0}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V7 · Daily Review SRS</div>
+    <div class="beta">AI V7.1 · History UI</div>
   </div>
 
   <div class="grid">
@@ -981,6 +996,48 @@ function rate(v){
  showReview();
 }
 window.addEventListener("load",updateReviewSummary);
+</script>
+
+<script>
+function loadPasteHistory(){
+ const h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ const box=document.getElementById("pasteHistory");
+ if(!box)return;
+ box.innerHTML=h.slice(0,5).map((x,i)=>
+ `<div class="history-item" onclick="useHistory(${i})">${escapeHtml(x)}</div>`
+ ).join("") || "No recent searches";
+}
+function savePasteHistory(t){
+ if(!t)return;
+ let h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ h=[t,...h.filter(x=>x!==t)].slice(0,10);
+ localStorage.setItem("nuance_paste_history",JSON.stringify(h));
+}
+function useHistory(i){
+ let h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ let input=document.querySelector("textarea,input[type=text]");
+ if(input) input.value=h[i]||"";
+ hidePasteHistory();
+}
+function hidePasteHistory(){
+ const box=document.getElementById("pasteHistory");
+ if(box) box.style.display="none";
+}
+function showPasteHistory(){
+ const box=document.getElementById("pasteHistory");
+ if(box){
+  loadPasteHistory();
+  box.style.display="block";
+ }
+}
+document.addEventListener("click",function(e){
+ const box=document.getElementById("pasteHistory");
+ if(!box)return;
+ if(!e.target.closest("#pasteHistory") && !e.target.closest("textarea,input")){
+   box.style.display="none";
+ }
+});
+window.addEventListener("load",loadPasteHistory);
 </script>
 </body>
 </html>
