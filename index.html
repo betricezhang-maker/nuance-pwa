@@ -55,11 +55,21 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V6.5 Lite · Phrase-Locked Enrichment</div>
+    <div class="beta">AI V7 · Daily Review SRS</div>
   </div>
 
   <div class="grid">
-    <div class="card">
+    
+<div class="review-box" style="border:1px solid #ddd;border-radius:16px;padding:16px;margin:16px 0">
+<h2>Daily Review</h2>
+<div id="reviewSummary">Loading...</div>
+<button class="primary" onclick="startReview()">Start Review</button>
+</div>
+<style>
+.review-card{border:1px solid #ddd;border-radius:16px;padding:16px;margin-top:12px}
+.review-buttons button{margin:5px}
+</style>
+<div class="card">
       <h2 style="margin-top:0">Paste a word, phrase, or sentence</h2>
       <textarea id="text" placeholder="Try: flurry of&#10;or: A flurry of announcements followed the meeting.">A flurry of announcements followed the meeting.</textarea>
 
@@ -908,6 +918,69 @@ const NuanceSync = (() => {
 window.NuanceSync=NuanceSync;
 window.addEventListener("load",()=>NuanceSync.init());
 
+</script>
+
+<script>
+let reviewQueue=[], reviewIndex=0;
+
+function srsInit(i){
+ if(!i.nextReview)i.nextReview=Date.now();
+ if(!i.interval)i.interval=1;
+ if(!i.reviews)i.reviews=0;
+}
+function dueCount(){
+ saved.forEach(srsInit);
+ return saved.filter(x=>x.nextReview<=Date.now()).length;
+}
+function updateReviewSummary(){
+ let e=document.getElementById("reviewSummary");
+ if(e)e.innerHTML=dueCount()+" words waiting today";
+}
+function startReview(){
+ reviewQueue=saved.filter(x=>x.nextReview<=Date.now());
+ reviewIndex=0;
+ showReview();
+}
+function showReview(){
+ let box=document.getElementById("reviewBox");
+ if(reviewIndex>=reviewQueue.length){
+  box.innerHTML="<h2>🎉 Review completed</h2>";
+  return;
+ }
+ let x=reviewQueue[reviewIndex];
+ box.innerHTML=`
+ <h2>Review ${reviewIndex+1}/${reviewQueue.length}</h2>
+ <div class="review-card">
+ <h2>${x.target||x.word||""}</h2>
+ <p>${x.original_context||""}</p>
+ <button onclick="answer()">Show Answer</button>
+ <div id="ans"></div>
+ </div>`;
+}
+function answer(){
+ let x=reviewQueue[reviewIndex];
+ document.getElementById("ans").innerHTML=`
+ <p><b>Meaning:</b>${x.meaning||""}</p>
+ <p><b>Synonyms:</b>${(x.synonyms||[]).map(s=>s.word||s).join(", ")}</p>
+ <div class="review-buttons">
+ <button onclick="rate('again')">Again</button>
+ <button onclick="rate('hard')">Hard</button>
+ <button onclick="rate('good')">Good</button>
+ <button onclick="rate('easy')">Easy</button>
+ </div>`;
+}
+function rate(v){
+ let x=reviewQueue[reviewIndex];
+ let days={again:1,hard:2,good:7,easy:30};
+ x.reviews++;
+ x.interval=days[v];
+ x.nextReview=Date.now()+x.interval*86400000;
+ localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+ window.NuanceSync?.schedulePush?.();
+ reviewIndex++;
+ showReview();
+}
+window.addEventListener("load",updateReviewSummary);
 </script>
 </body>
 </html>
