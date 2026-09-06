@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "POST only" });
   }
 
-  const { text, intensity, situation } = req.body || {};
+  const { text, intensity, situation, target_override } = req.body || {};
 
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Missing text." });
@@ -32,13 +32,19 @@ Rules:
 - A candidate should be usable as a realistic replacement in at least one closely matching sentence.
 - Do not rank a merely related word above a genuine synonym.
 - Preserve idioms, collocations, phrasal verbs, and multi-word meanings.
+- If TARGET OVERRIDE is supplied, treat that exact full expression as ONE lexical unit.
+- NEVER split a supplied target phrase into its component words for synonym generation.
+- For idioms, collocations, phrasal verbs, and fixed expressions, return substitutes for the WHOLE expression only.
 - Be concise. This is a dictionary lookup, not an essay.
 - Return JSON only.
 `;
 
   const userPrompt = `
-INPUT:
+INPUT / CONTEXT:
 ${text}
+
+TARGET OVERRIDE:
+${target_override ? target_override : "(none — identify the target from the input)"}
 
 USER SETTINGS:
 Intensity target: ${intensity}/5
@@ -74,6 +80,9 @@ Return exactly this JSON structure:
 }
 
 STRICT RULES:
+- If TARGET OVERRIDE is present, the "target" field MUST equal that exact expression.
+- If TARGET OVERRIDE is a multi-word phrase, idiom, collocation, or phrasal verb, synonyms must replace the WHOLE phrase.
+- Do NOT generate synonyms for individual words inside TARGET OVERRIDE.
 - Return ONLY the 3 BEST genuine near-synonyms/substitutes.
 - Do NOT pad the list if fewer than 3 are genuinely close.
 - Put related but non-substitutable words in related_but_not_synonyms.
@@ -129,6 +138,11 @@ STRICT RULES:
 
     if (!data.target || !Array.isArray(data.synonyms)) {
       return res.status(500).json({ error: "The AI response was missing required vocabulary fields." });
+    }
+
+    // For imported/header enrichment, lock the target to the exact supplied expression.
+    if (target_override && typeof target_override === "string" && target_override.trim()) {
+      data.target = target_override.trim();
     }
 
     data.synonyms = data.synonyms
