@@ -38,13 +38,24 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 .source-badge{display:inline-block;margin-left:6px;background:#f5f6f8;color:#687080;border-radius:999px;padding:3px 6px;font-size:9px;font-weight:800;text-transform:uppercase}
 .progressbar{height:8px;background:#eceef4;border-radius:99px;overflow:hidden;margin-top:8px}.progressbar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 .import-report{font-size:12px;line-height:1.5;margin-top:8px}
+
+.enrich-badge{display:inline-block;background:#eef8f3;color:#177a57;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800;margin-left:6px}
+.item-click{cursor:pointer}
+.detail-panel{margin-top:10px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafbff}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+@media(max-width:650px){.detail-grid{grid-template-columns:1fr}}
+.detail-box{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px}
+.detail-title{font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.syn-row{border-top:1px solid var(--line);padding:8px 0}
+.syn-row:first-child{border-top:0}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V6.2 Lite · Auto-Update</div>
+    <div class="beta">AI V6.3 Lite · Enrichment UI</div>
   </div>
 
   <div class="grid">
@@ -465,38 +476,153 @@ async function enrichImported(id){
 }
 function cssSafeId(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,"_").slice(0,120)}
 
+
+function enrichmentFor(item){
+  if(!item) return null;
+  if(Array.isArray(item.synonyms) && item.synonyms.length) return item;
+  return null;
+}
+
+function enrichmentHtml(item){
+  const e=enrichmentFor(item);
+  if(!e) return `<div class="muted" style="font-size:12px">No AI enrichment yet.</div>`;
+
+  const syns=[...(e.synonyms||[])].sort((a,b)=>(b.fit_score||0)-(a.fit_score||0));
+  const related=e.related_but_not_synonyms||[];
+
+  return `
+    <div class="detail-panel">
+      <div class="detail-grid">
+        <div class="detail-box">
+          <div class="detail-title">Intensity</div>
+          <b>${e.detected_intensity||e.requested_intensity||""}/5</b>
+        </div>
+        <div class="detail-box">
+          <div class="detail-title">Register</div>
+          <b>${escapeHtml(e.register||"")}</b>
+        </div>
+        <div class="detail-box">
+          <div class="detail-title">Part of speech</div>
+          <b>${escapeHtml(e.part_of_speech||"")}</b>
+        </div>
+      </div>
+
+      ${e.meaning?`<div class="example" style="margin-top:9px"><b>Meaning:</b> ${escapeHtml(e.meaning)}</div>`:""}
+
+      <div style="margin-top:10px"><b>Best-fit synonyms</b></div>
+      ${syns.length?syns.map((s,i)=>`
+        <div class="syn-row">
+          <div><b>${i===0?"#1 ":""}${escapeHtml(s.word||"")}</b> <span class="pill">${s.fit_score||0}% fit</span></div>
+          <div class="muted" style="font-size:12px;margin-top:3px">
+            Intensity ${s.intensity||""}/5 · ${escapeHtml(s.tone||"")} · ${escapeHtml(s.situation_fit||"")}
+          </div>
+          ${s.key_difference?`<div style="font-size:12px;margin-top:4px">${escapeHtml(s.key_difference)}</div>`:""}
+          ${(s.examples||[]).length?`<div class="example">${escapeHtml((s.examples||[])[0])}</div>`:""}
+        </div>
+      `).join(""):'<div class="muted" style="font-size:12px;margin-top:6px">No close synonyms returned.</div>'}
+
+      ${related.length?`
+        <div style="margin-top:10px"><b>Related, but not true synonyms</b></div>
+        ${related.map(r=>`<div style="font-size:12px;margin-top:4px"><b>${escapeHtml(r.word||"")}</b> — ${escapeHtml(r.why_not_synonym||"")}</div>`).join("")}
+      `:""}
+    </div>`;
+}
+
+function toggleItemDetails(index){
+  const el=document.getElementById("item-detail-"+index);
+  if(!el) return;
+  const isOpen=el.style.display!=="none";
+  el.style.display=isOpen?"none":"block";
+}
+
+async function enrichItem(index){
+  const item=saved[index];
+  if(!item) return;
+
+  const btn=document.getElementById("enrich-btn-"+index);
+  const oldText=btn?.textContent;
+  if(btn){btn.disabled=true;btn.textContent="Enriching…";}
+
+  const text=item.original_context||item.lookup_text||item.target||item.word||"";
+  const intensity=item.requested_intensity||item.detected_intensity||item.intensity||3;
+  const situation=item.situation||activeContext||"Professional Email";
+
+  try{
+    const r=await fetch("/api/analyze",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text,intensity,situation})
+    });
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"AI enrichment failed.");
+
+    saved[index]={
+      ...item,
+      target:data.target||item.target||item.word,
+      meaning:data.meaning_in_context||item.meaning||"",
+      original_context:data.original_context||item.original_context||text,
+      simpler_rewrite:data.simpler_rewrite||"",
+      part_of_speech:data.part_of_speech||"",
+      register:data.register||"",
+      detected_intensity:data.detected_intensity||intensity,
+      synonyms:data.synonyms||[],
+      related_but_not_synonyms:data.related_but_not_synonyms||[],
+      enriched:true,
+      enriched_at:Date.now(),
+      last_seen_at:Date.now()
+    };
+
+    localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+    window.NuanceSync?.schedulePush?.();
+    renderSaved();
+
+    setTimeout(()=>{
+      const detail=document.getElementById("item-detail-"+index);
+      if(detail) detail.style.display="block";
+    },0);
+
+  }catch(e){
+    alert(e.message||"AI enrichment failed.");
+    if(btn){btn.disabled=false;btn.textContent=oldText||"Enrich with AI";}
+  }
+}
+
 function renderSaved(){
   const box=document.getElementById("savedList");
-  const q=normalizeKey(document.getElementById("librarySearch")?.value||"");
-  const now=Date.now();
-  let rows=saved.filter(s=>{
-    const source=s.source_type||"lookup";
-    if(libraryFilter==="lookup" && source!=="lookup")return false;
-    if(libraryFilter==="imported" && source!=="imported")return false;
-    if(libraryFilter==="due" && (s.due||0)>now)return false;
-    if(libraryFilter==="mastered" && (s.reviews||0)<4)return false;
-    if(q && !normalizeKey((s.target||s.word||"")+" "+(s.meaning||"")+" "+(s.original_context||"")).includes(q))return false;
-    return true;
-  });
-  rows.sort((a,b)=>((a.due||0)-(b.due||0))||((b.added_at||0)-(a.added_at||0)));
-  box.innerHTML=rows.length?rows.slice(0,150).map(s=>{
-    const source=s.source_type||"lookup";
-    const idx=saved.indexOf(s);
-    const target=s.target||s.word||"";
-    return `<div class="saved">
-      <b>${escapeHtml(target)}</b><span class="source-badge">${source}</span>
-      ${(s.due||0)<=now?'<span class="best">Due</span>':''}
-      <div class="muted" style="font-size:12px;margin-top:4px">${escapeHtml(s.situation||"General")} · Intensity ${s.detected_intensity||s.intensity||3}/5 · Reviews ${s.reviews||0}</div>
-      ${s.meaning?`<div style="font-size:12px;margin-top:5px">${escapeHtml(s.meaning)}</div>`:""}
-      ${s.source_file?`<div class="muted" style="font-size:11px;margin-top:4px">Source: ${escapeHtml(s.source_file)}</div>`:""}
-      <div class="row" style="margin-top:7px">
-        ${source==="imported"&&s.needs_enrichment?`<button id="enrich-${cssSafeId(s.id)}" class="ghost small" onclick="enrichImported('${String(s.id).replace(/'/g,"&#39;")}')">Enrich with AI</button>`:""}
-        <button class="ghost small" onclick="removeSaved(${idx})">Remove</button>
+  if(!box) return;
+
+  box.innerHTML=saved.length?saved.map((s,i)=>{
+    const enriched=!!(s.enriched || (Array.isArray(s.synonyms)&&s.synonyms.length));
+    const title=s.target||s.word||"";
+    const context=s.original_context||s.lookup_text||"";
+    return `<div class="saved item-click">
+      <div onclick="toggleItemDetails(${i})">
+        <b>${escapeHtml(title)}</b>
+        ${enriched?'<span class="enrich-badge">✓ Enriched</span>':''}
+        <div class="muted" style="font-size:12px;margin-top:4px">
+          ${escapeHtml(s.situation||"")} ${s.detected_intensity||s.intensity?`· Intensity ${s.detected_intensity||s.intensity}/5`:""}
+        </div>
+        ${s.meaning?`<div style="font-size:12px;margin-top:5px">${escapeHtml(s.meaning)}</div>`:""}
+        ${context?`<div class="muted" style="font-size:12px;margin-top:4px">Context: ${escapeHtml(context).slice(0,130)}${String(context).length>130?"…":""}</div>`:""}
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        ${enriched
+          ? `<button class="ghost small" onclick="event.stopPropagation();toggleItemDetails(${i})">Show details</button>`
+          : `<button class="primary small" id="enrich-btn-${i}" onclick="event.stopPropagation();enrichItem(${i})">Enrich with AI</button>`
+        }
+        <button class="ghost small" onclick="event.stopPropagation();removeSaved(${i})">Remove</button>
+      </div>
+
+      <div id="item-detail-${i}" style="display:${enriched?'block':'none'}">
+        ${enrichmentHtml(s)}
       </div>
     </div>`;
-  }).join(""):`<div class="muted">No vocabulary matches this filter.</div>`;
+  }).join("")
+  :'<div class="muted">Your vocabulary pool is empty. Every successful lookup will be added automatically.</div>';
+
   document.getElementById("savedCount").textContent=saved.length;
-  document.getElementById("dueCount").textContent=saved.filter(s=>(s.due||0)<=now).length;
+  document.getElementById("dueCount").textContent=saved.filter(s=>(s.due||0)<=Date.now()).length;
   document.getElementById("masteredCount").textContent=saved.filter(s=>(s.reviews||0)>=4).length;
   renderReview();
 }
