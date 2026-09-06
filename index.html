@@ -44,7 +44,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V6.1 Lite · Cloud Sync</div>
+    <div class="beta">AI V6.2 Lite · Auto-Update</div>
   </div>
 
   <div class="grid">
@@ -548,7 +548,41 @@ function grade(id,q){
   localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();renderSaved();
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
-if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js"));
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+
+      // Ask Safari/Chrome to check for a new service worker immediately.
+      await reg.update();
+
+      // If a new worker is already waiting, activate it now.
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+
+      reg.addEventListener("updatefound", () => {
+        const worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            worker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+
+      // Reload once when the new service worker takes control.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    } catch (e) {
+      console.warn("Service worker update failed:", e);
+    }
+  });
+}
 tags();renderSaved();
 
 const NuanceSync = (() => {
