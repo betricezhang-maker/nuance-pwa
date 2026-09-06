@@ -55,7 +55,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V6.4 Lite · Sync Delete Fix</div>
+    <div class="beta">AI V6.5 Lite · Phrase-Locked Enrichment</div>
   </div>
 
   <div class="grid">
@@ -543,7 +543,15 @@ async function enrichItem(index){
   const oldText=btn?.textContent;
   if(btn){btn.disabled=true;btn.textContent="Enriching…";}
 
-  const text=item.original_context||item.lookup_text||item.target||item.word||"";
+  // IMPORTANT: for imported vocabulary, the header/phrase is the locked lexical target.
+  const lockedTarget=String(item.target||item.word||"").trim();
+  const contextText=String(
+    item.original_context||
+    item.lookup_text||
+    item.meaning||
+    lockedTarget
+  ).trim();
+
   const intensity=item.requested_intensity||item.detected_intensity||item.intensity||3;
   const situation=item.situation||activeContext||"Professional Email";
 
@@ -551,16 +559,22 @@ async function enrichItem(index){
     const r=await fetch("/api/analyze",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,intensity,situation})
+      body:JSON.stringify({
+        text:contextText,
+        target_override:lockedTarget || null,
+        intensity,
+        situation
+      })
     });
+
     const data=await r.json();
     if(!r.ok) throw new Error(data.error||"AI enrichment failed.");
 
     saved[index]={
       ...item,
-      target:data.target||item.target||item.word,
+      target:lockedTarget || data.target || item.target || item.word,
       meaning:data.meaning_in_context||item.meaning||"",
-      original_context:data.original_context||item.original_context||text,
+      original_context:item.original_context||data.original_context||contextText,
       simpler_rewrite:data.simpler_rewrite||"",
       part_of_speech:data.part_of_speech||"",
       register:data.register||"",
@@ -586,7 +600,6 @@ async function enrichItem(index){
     if(btn){btn.disabled=false;btn.textContent=oldText||"Enrich with AI";}
   }
 }
-
 function renderSaved(){
   const box=document.getElementById("savedList");
   if(!box) return;
