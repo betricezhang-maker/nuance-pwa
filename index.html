@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V3 · Fast</div>
+    <div class="beta">AI V4 · Auto-Save</div>
   </div>
 
   <div class="grid">
@@ -54,6 +54,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
         <button class="primary" onclick="analyze()">Analyze with AI</button>
         <button class="ghost" onclick="pasteText()">Paste</button>
       </div>
+      <div class="muted" style="font-size:12px;margin-top:8px">✓ Every successful lookup is automatically added to your spaced-repetition pool.</div>
 
       <div id="loading" class="notice loading">Analyzing meaning, register, intensity and nearby alternatives…</div>
       <div id="error"></div>
@@ -84,7 +85,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
       <div class="card" style="margin-top:16px">
         <h2 style="margin-top:0">V2 status</h2>
         <div class="notice">
-          Fast mode: DeepSeek reasoning is disabled for lookup speed. Only the 3 closest substitutes are returned first, and related-but-not-synonymous words are separated.
+          Every successful lookup is automatically saved to your vocabulary pool and becomes due for spaced-repetition review. No Save button is required.
         </div>
       </div>
     </div>
@@ -122,6 +123,7 @@ async function analyze(){
     const data=await r.json();
     if(!r.ok) throw new Error(data.error||"Analysis failed.");
     current=data;
+    autoSaveLookup(data, text, intensity, activeContext);
     render(data);
   }catch(e){
     document.getElementById("error").innerHTML=`<div class="error">${escapeHtml(e.message)}</div>`;
@@ -154,7 +156,7 @@ function render(data){
       <span class="pill">${escapeHtml(x.situation_fit)}</span>
     </div>
     <div class="example">${escapeHtml(x.examples[0]||"")}</div>
-    <div class="row" style="margin-top:9px"><button class="ghost small" onclick="saveSyn(${i})">＋ Save</button></div>
+    
   </div>`).join("");
 
   document.getElementById("summary").innerHTML=`<div class="tablewrap"><table>
@@ -172,23 +174,75 @@ function render(data){
        <div class="notice">${related.map(x=>`<div style="margin-bottom:7px"><b>${escapeHtml(x.word)}</b> — ${escapeHtml(x.why_not_synonym)}</div>`).join("")}</div>`
     : "";
 }
-function saveSyn(index){
-  if(!current)return;
-  const rows=[...(current.synonyms||[])].sort((x,y)=>y.fit_score-x.fit_score);
-  const x=rows[index]; if(!x)return;
-  const id=(current.target+"|"+x.word+"|"+activeContext).toLowerCase();
-  if(saved.some(s=>s.id===id))return;
-  saved.push({id,target:current.target,word:x.word,meaning:current.meaning_in_context,context:current.original_context||document.getElementById("text").value,
-    situation:activeContext,intensity:x.intensity,tone:x.tone,difference:x.key_difference,examples:x.examples||[],
-    due:Date.now(),interval:1,ease:2.5,reviews:0});
-  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); renderSaved();
+function normalizeKey(s){
+  return String(s||"").trim().toLowerCase().replace(/\s+/g," ");
 }
+
+function autoSaveLookup(data, sourceText, requestedIntensity, situation){
+  if(!data || !data.target) return;
+
+  const targetKey=normalizeKey(data.target);
+  const sourceKey=normalizeKey(sourceText);
+  const id=(targetKey+"|"+sourceKey).slice(0,500);
+
+  const synonyms=[...(data.synonyms||[])].sort((a,b)=>(b.fit_score||0)-(a.fit_score||0));
+  const best=synonyms[0]||null;
+
+  const item={
+    id,
+    target:data.target,
+    lookup_text:sourceText,
+    meaning:data.meaning_in_context||"",
+    original_context:data.original_context||sourceText,
+    simpler_rewrite:data.simpler_rewrite||"",
+    part_of_speech:data.part_of_speech||"",
+    register:data.register||"",
+    detected_intensity:data.detected_intensity||requestedIntensity,
+    requested_intensity:requestedIntensity,
+    situation,
+    synonyms,
+    related_but_not_synonyms:data.related_but_not_synonyms||[],
+    best_synonym:best?.word||"",
+    best_difference:best?.key_difference||"",
+    examples:best?.examples||[],
+    due:Date.now(),
+    interval:1,
+    ease:2.5,
+    reviews:0,
+    added_at:Date.now(),
+    last_seen_at:Date.now()
+  };
+
+  const existing=saved.findIndex(s=>s.id===id);
+
+  if(existing>=0){
+    // Preserve SRS progress while refreshing the latest language analysis.
+    const old=saved[existing];
+    item.due=old.due ?? Date.now();
+    item.interval=old.interval ?? 1;
+    item.ease=old.ease ?? 2.5;
+    item.reviews=old.reviews ?? 0;
+    item.added_at=old.added_at ?? Date.now();
+    saved[existing]={...old,...item,last_seen_at:Date.now()};
+  }else{
+    saved.unshift(item);
+  }
+
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+  renderSaved();
+}
+
 function renderSaved(){
   const box=document.getElementById("savedList");
-  box.innerHTML=saved.length?saved.map((s,i)=>`<div class="saved"><b>${escapeHtml(s.word)}</b> <span class="muted">← ${escapeHtml(s.target)}</span>
-    <div class="muted" style="font-size:12px;margin-top:3px">${escapeHtml(s.situation)} · ${s.intensity}/5</div>
-    <div class="row" style="margin-top:6px"><button class="ghost small" onclick="removeSaved(${i})">Remove</button></div></div>`).join("")
-    :'<div class="muted">No saved vocabulary yet.</div>';
+  box.innerHTML=saved.length?saved.map((s,i)=>`<div class="saved">
+    <b>${escapeHtml(s.target||s.word||"")}</b>
+    <span class="best">Auto-saved</span>
+    <div class="muted" style="font-size:12px;margin-top:4px">${escapeHtml(s.situation||"")} · Intensity ${s.detected_intensity||s.intensity||""}/5</div>
+    ${s.meaning?`<div style="font-size:12px;margin-top:5px">${escapeHtml(s.meaning)}</div>`:""}
+    ${s.original_context?`<div class="muted" style="font-size:12px;margin-top:4px">Context: ${escapeHtml(s.original_context).slice(0,130)}${String(s.original_context).length>130?"…":""}</div>`:""}
+    <div class="row" style="margin-top:7px"><button class="ghost small" onclick="removeSaved(${i})">Remove</button></div>
+  </div>`).join("")
+    :'<div class="muted">Your vocabulary pool is empty. Every successful lookup will be added automatically.</div>';
   document.getElementById("savedCount").textContent=saved.length;
   document.getElementById("dueCount").textContent=saved.filter(s=>(s.due||0)<=Date.now()).length;
   document.getElementById("masteredCount").textContent=saved.filter(s=>(s.reviews||0)>=4).length;
@@ -198,20 +252,42 @@ function removeSaved(i){saved.splice(i,1);localStorage.setItem("nuance_v2_saved"
 function renderReview(){
   const b=document.getElementById("reviewBox");
   const s=saved.find(x=>(x.due||0)<=Date.now())||saved[0];
-  if(!s){b.className="muted";b.innerHTML="Save a word or phrase to begin reviews.";return}
+
+  if(!s){
+    b.className="muted";
+    b.innerHTML="Look up any word, phrase, or sentence to begin reviews.";
+    return;
+  }
+
   b.className="";
-  b.innerHTML=`<div><b>Which word best replaces “${escapeHtml(s.target)}”</b> in this situation?</div>
-    <div class="example" style="margin-top:8px">${escapeHtml(s.context||"")}</div>
-    <button class="ghost small" style="margin-top:9px" onclick="showReview('${s.id.replace(/'/g,"&#39;")}')">Show answer</button>
+  const context=s.original_context||s.lookup_text||"";
+  b.innerHTML=`
+    <div class="muted" style="font-size:11px">DUE FOR REVIEW</div>
+    <div style="margin-top:5px"><b>What does “${escapeHtml(s.target||s.word||"")}” mean here?</b></div>
+    ${context?`<div class="example" style="margin-top:8px">${escapeHtml(context)}</div>`:""}
+    <button class="ghost small" style="margin-top:9px" onclick="showReview('${String(s.id).replace(/'/g,"&#39;")}')">Show answer</button>
     <div id="reviewAnswer"></div>`;
 }
 function showReview(id){
-  const s=saved.find(x=>x.id===id);if(!s)return;
-  document.getElementById("reviewAnswer").innerHTML=`<div class="example"><b>${escapeHtml(s.word)}</b><br>${escapeHtml(s.difference)}</div>
-  <div class="row" style="margin-top:8px">
-    <button class="ghost small" onclick="grade('${id}',1)">Again</button><button class="ghost small" onclick="grade('${id}',3)">Hard</button>
-    <button class="ghost small" onclick="grade('${id}',4)">Good</button><button class="primary small" onclick="grade('${id}',5)">Easy</button>
-  </div>`;
+  const s=saved.find(x=>x.id===id);
+  if(!s)return;
+
+  const best=s.best_synonym
+    ? `<br><br><b>Closest alternative:</b> ${escapeHtml(s.best_synonym)}${s.best_difference?` — ${escapeHtml(s.best_difference)}`:""}`
+    : "";
+
+  document.getElementById("reviewAnswer").innerHTML=`
+    <div class="example">
+      <b>${escapeHtml(s.target||s.word||"")}</b><br>
+      ${escapeHtml(s.meaning||"")}
+      ${best}
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost small" onclick="grade('${id}',1)">Again</button>
+      <button class="ghost small" onclick="grade('${id}',3)">Hard</button>
+      <button class="ghost small" onclick="grade('${id}',4)">Good</button>
+      <button class="primary small" onclick="grade('${id}',5)">Easy</button>
+    </div>`;
 }
 function grade(id,q){
   const i=saved.findIndex(x=>x.id===id);if(i<0)return;
