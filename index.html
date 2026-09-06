@@ -2,130 +2,140 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nuance V8.4 Clean Architecture</title>
+<title>Nuance V8.5</title>
 <style>
 body{font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:20px;color:#172033}
-header{margin-bottom:15px}
-nav{display:flex;gap:8px;flex-wrap:wrap}
-button{padding:10px 15px;border-radius:12px;border:1px solid #ddd;background:white;cursor:pointer}
+h1{margin-bottom:4px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+button{padding:10px 14px;border-radius:12px;border:1px solid #ddd;background:white;cursor:pointer}
 .active{background:#4f46e5;color:white}
 .page{display:none}
 .page.active{display:block}
-.card{background:white;border-radius:18px;padding:18px;margin-top:15px}
-textarea,input{width:100%;padding:12px;border-radius:12px;border:1px solid #ddd;box-sizing:border-box}
-.history{background:#f1f2f4;color:#666;padding:10px;border-radius:12px;margin-top:8px}
-.item{padding:10px;border-bottom:1px solid #eee}
-.pagination{display:flex;justify-content:center;gap:12px;margin-top:15px}
+.card{background:white;border-radius:18px;padding:18px;margin:15px 0}
+textarea,input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid #ddd}
+.item{padding:12px;border-bottom:1px solid #eee}
+.history{background:#f1f2f4;color:#666;padding:10px;border-radius:12px}
 </style>
 </head>
-
 <body>
-<header>
-<h1>Nuance V8.4</h1>
-<p>Read → Understand → Remember</p>
-</header>
+
+<h1>Nuance V8.5</h1>
+<p>AI language learning workspace</p>
 
 <nav>
-<button onclick="openPage('lookup',this)" class="active">Lookup</button>
-<button onclick="openPage('review',this)">Review</button>
-<button onclick="openPage('library',this)">Library</button>
-<button onclick="openPage('config',this)">Config</button>
+<button class="active" onclick="tab('lookup',this)">🔍 Lookup</button>
+<button onclick="tab('review',this)">🧠 Review</button>
+<button onclick="tab('library',this)">📚 Library</button>
+<button onclick="tab('config',this)">⚙ Config</button>
 </nav>
 
 <section id="lookup" class="page active card">
 <h2>Lookup</h2>
-<textarea id="query" placeholder="Paste word, phrase or paragraph"></textarea>
+<textarea id="query" placeholder="Paste phrase or sentence"></textarea>
 <div id="history" class="history" style="display:none"></div>
 <br>
 <button onclick="analyze()">Analyze with AI</button>
-<div id="result" class="card">AI result appears here.</div>
+<div id="result" class="card">
+AI result will appear here.
+</div>
 </section>
 
 <section id="review" class="page card">
 <h2>Review</h2>
-<p id="reviewStatus">No scheduled cards yet. Random practice available.</p>
+<p id="status"></p>
 <button onclick="startReview()">Start Review</button>
 <div id="reviewCard" class="card" style="display:none"></div>
 </section>
 
 <section id="library" class="page card">
 <h2>Library</h2>
-<input placeholder="Search vocabulary">
-<div id="libraryList"></div>
-<div class="pagination">
-<button onclick="prevPage()">Prev</button>
-<span id="pageInfo"></span>
-<button onclick="nextPage()">Next</button>
-</div>
+<input id="search" placeholder="Search phrases" oninput="renderLibrary()">
+<div id="list"></div>
+<button onclick="prev()">Prev</button>
+<span id="page"></span>
+<button onclick="next()">Next</button>
 </section>
 
 <section id="config" class="page card">
 <h2>Config</h2>
-<button onclick="alert('Sync ready')">Cloud Sync</button>
-<button onclick="alert('Import ready')">Import</button>
-<button onclick="alert('Export ready')">Export</button>
-<button onclick="alert('Data management ready')">Data Management</button>
+<button onclick="sync()">Cloud Sync</button>
+<button onclick="importData()">Import</button>
+<button onclick="exportData()">Export</button>
 </section>
 
 <script>
-let words=JSON.parse(localStorage.getItem("nuance_words")||"[]");
-let page=1, size=20, reviewIndex=0;
+let pool=JSON.parse(localStorage.getItem("nuance_pool")||"[]");
+let pageNo=1,size=20,reviewIndex=0;
 
-function openPage(id,btn){
+function tab(id,b){
  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
  document.getElementById(id).classList.add("active");
  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
- btn.classList.add("active");
+ b.classList.add("active");
  if(id==="library")renderLibrary();
+ if(id==="review")updateStatus();
 }
-
-document.getElementById("query").addEventListener("focus",()=>{
- let h=document.getElementById("history");
- h.style.display="none";
-});
-
-document.getElementById("query").addEventListener("input",()=>{
- document.getElementById("history").style.display="none";
-});
 
 function analyze(){
  let q=document.getElementById("query").value.trim();
  if(!q)return;
- words.unshift({phrase:q,date:new Date().toISOString(),nextReview:Date.now()});
- localStorage.setItem("nuance_words",JSON.stringify(words));
+ let item={
+  phrase:q,
+  created:Date.now(),
+  nextReview:Date.now()
+ };
+ pool.unshift(item);
+ localStorage.setItem("nuance_pool",JSON.stringify(pool));
  document.getElementById("result").innerHTML=
- "<h3>"+q+"</h3><p>Meaning / synonyms / intensity / context will be displayed here.</p>";
+ `<h3>${q}</h3>
+ <p>AI enrichment placeholder: phrase meaning, intensity, synonyms and examples connect here.</p>`;
  renderLibrary();
 }
 
-function startReview(){
- if(words.length===0){
-  document.getElementById("reviewCard").innerHTML="No phrases saved yet.";
- }else{
-  let w=words[reviewIndex%words.length];
-  document.getElementById("reviewCard").innerHTML=
-  "<h3>"+w.phrase+"</h3>"+
-  "<button onclick='rate(\"Again\")'>Again</button>"+
-  "<button onclick='rate(\"Hard\")'>Hard</button>"+
-  "<button onclick='rate(\"Good\")'>Good</button>"+
-  "<button onclick='rate(\"Easy\")'>Easy</button>";
- }
- document.getElementById("reviewCard").style.display="block";
+function updateStatus(){
+ let due=pool.filter(x=>!x.nextReview||x.nextReview<=Date.now()).length;
+ document.getElementById("status").innerText=
+ due+" cards due. Random practice available if none are scheduled.";
 }
-function rate(x){
+
+function startReview(){
+ let cards=pool.filter(x=>!x.nextReview||x.nextReview<=Date.now());
+ if(cards.length===0) cards=pool.slice().sort(()=>Math.random()-0.5);
+ let c=cards[0];
+ let box=document.getElementById("reviewCard");
+ box.style.display="block";
+ box.innerHTML=`<h3>${c?c.phrase:"No cards"}</h3>
+ <button onclick="rate(1)">Again</button>
+ <button onclick="rate(3)">Hard</button>
+ <button onclick="rate(7)">Good</button>
+ <button onclick="rate(30)">Easy</button>`;
+}
+
+function rate(days){
+ let item=pool[reviewIndex%pool.length];
+ if(item){
+  item.nextReview=Date.now()+days*86400000;
+  localStorage.setItem("nuance_pool",JSON.stringify(pool));
+ }
  reviewIndex++;
  startReview();
 }
+
 function renderLibrary(){
- let list=document.getElementById("libraryList");
- let start=(page-1)*size;
- list.innerHTML=words.slice(start,start+size).map(x=>
- "<div class='item'>"+x.phrase+"</div>").join("");
- document.getElementById("pageInfo").innerText=
- "Page "+page+" / "+Math.max(1,Math.ceil(words.length/size));
+ let q=(document.getElementById("search")||{}).value||"";
+ let arr=pool.filter(x=>x.phrase.includes(q));
+ let start=(pageNo-1)*size;
+ document.getElementById("list").innerHTML=
+ arr.slice(start,start+size).map(x=>`<div class="item">${x.phrase}</div>`).join("");
+ document.getElementById("page").innerText=` Page ${pageNo}/${Math.max(1,Math.ceil(arr.length/size))}`;
 }
-function nextPage(){if(page<Math.ceil(words.length/size))page++;renderLibrary()}
-function prevPage(){if(page>1)page--;renderLibrary()}
+function next(){pageNo++;renderLibrary()}
+function prev(){if(pageNo>1)pageNo--;renderLibrary()}
+
+function sync(){alert("Sync module ready for connection")}
+function importData(){alert("Import module ready")}
+function exportData(){alert("Export module ready")}
+
 renderLibrary();
 </script>
 </body>
