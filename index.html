@@ -65,12 +65,21 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 }
 .history-item:last-child{border-bottom:0}
 </style>
+
+<style>
+#reviewBox{
+ min-height:auto !important;
+}
+.review-box{
+ padding:12px !important;
+}
+</style>
 </head>
 <body>
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V7.1 · History UI</div>
+    <div class="beta">AI V7.2 · Input UX</div>
   </div>
 
   <div class="grid">
@@ -1038,6 +1047,35 @@ document.addEventListener("click",function(e){
  }
 });
 window.addEventListener("load",loadPasteHistory);
+</script>
+
+<script>
+(function(){
+let clearedOnce=false;
+
+function setupNuanceInput(){
+ const area=document.querySelector("textarea");
+ if(!area) return;
+
+ // Remove demo text on first focus only
+ area.addEventListener("focus",function(){
+   if(!clearedOnce && 
+      (area.value.includes("A flurry of announcements followed the meeting.") ||
+       area.value.includes("Try:"))){
+        area.value="";
+        clearedOnce=true;
+   }
+ },{once:false});
+
+ // Hide history when typing
+ area.addEventListener("input",function(){
+   const h=document.getElementById("pasteHistory");
+   if(h) h.style.display="none";
+ });
+}
+
+window.addEventListener("load",setupNuanceInput);
+})();
 </script>
 </body>
 </html>
