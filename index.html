@@ -79,7 +79,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V7.2 · Input UX</div>
+    <div class="beta">AI V7.3 · Smart Review + Tabs</div>
   </div>
 
   <div class="grid">
@@ -1076,6 +1076,45 @@ function setupNuanceInput(){
 
 window.addEventListener("load",setupNuanceInput);
 })();
+</script>
+
+<style>
+.nuance-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.nuance-tabs button{border:1px solid #ddd;border-radius:999px;padding:8px 14px;background:#f5f5f5}
+.history-box{background:#f3f4f6!important;color:#666!important;border-radius:12px!important}
+</style>
+<div class="nuance-tabs">
+<button onclick="switchNuanceTab('lookup')">Lookup</button>
+<button onclick="switchNuanceTab('review')">Review</button>
+<button onclick="switchNuanceTab('library')">Library</button>
+<button onclick="switchNuanceTab('config')">Config</button>
+</div>
+<script>
+function switchNuanceTab(name){
+ document.querySelectorAll('.nuance-panel').forEach(x=>x.style.display='none');
+ let x=document.getElementById(name);
+ if(x)x.style.display='block';
+}
+
+function smartReviewStart(){
+ let pool=(typeof saved!=="undefined")?saved:[];
+ let due=pool.filter(x=>!x.nextReview || x.nextReview<=Date.now());
+
+ if(due.length===0){
+   due=[...pool].sort(()=>Math.random()-0.5).slice(0,10);
+   alert("No scheduled cards yet. Random test mode started.");
+ }
+ reviewQueue=due;
+ reviewIndex=0;
+ showReviewCard();
+}
+
+document.addEventListener("focusin",e=>{
+ if(e.target.tagName==="TEXTAREA"){
+   let h=document.getElementById("pasteHistory");
+   if(h)h.style.display="none";
+ }
+});
 </script>
 </body>
 </html>
