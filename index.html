@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V2</div>
+    <div class="beta">AI V3 · Fast</div>
   </div>
 
   <div class="grid">
@@ -60,9 +60,9 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
       <div id="analysis"></div>
       <div id="results"></div>
 
-      <h2>Synonym snapshot</h2>
+      <h2>Best-fit synonym snapshot</h2>
       <div class="muted" style="font-size:13px;margin:-4px 0 10px">Sequenced from highest to lowest fit for the selected situation and intensity.</div>
-      <div id="summary"></div>
+      <div id="summary"></div><div id="related"></div>
     </div>
 
     <div>
@@ -84,7 +84,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
       <div class="card" style="margin-top:16px">
         <h2 style="margin-top:0">V2 status</h2>
         <div class="notice">
-          Arbitrary words and phrases now work through the AI backend. Vocabulary is still stored locally on this device in V2. Cross-device cloud sync comes next.
+          Fast mode: DeepSeek reasoning is disabled for lookup speed. Only the 3 closest substitutes are returned first, and related-but-not-synonymous words are separated.
         </div>
       </div>
     </div>
@@ -116,7 +116,7 @@ async function analyze(){
   document.getElementById("error").innerHTML="";
   document.getElementById("analysis").innerHTML="";
   document.getElementById("results").innerHTML="";
-  document.getElementById("summary").innerHTML="";
+  document.getElementById("summary").innerHTML=""; document.getElementById("related").innerHTML="";
   try{
     const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,intensity,situation:activeContext})});
     const data=await r.json();
@@ -158,13 +158,19 @@ function render(data){
   </div>`).join("");
 
   document.getElementById("summary").innerHTML=`<div class="tablewrap"><table>
-    <thead><tr><th>Word</th><th>Fit</th><th>Intensity</th><th>Tone</th><th>Situation</th><th>Difference</th><th>Examples</th></tr></thead>
+    <thead><tr><th>Word</th><th>Fit</th><th>Intensity</th><th>Tone</th><th>Situation</th><th>Difference</th><th>Example</th></tr></thead>
     <tbody>${rows.map((x,i)=>`<tr>
       <td><b>${escapeHtml(x.word)}</b>${i===0?'<br><span class="best">#1 Best fit</span>':''}</td>
       <td>${x.fit_score}%</td><td>${x.intensity}/5</td><td>${escapeHtml(x.tone)}</td><td>${escapeHtml(x.situation_fit)}</td>
       <td>${escapeHtml(x.key_difference)}</td>
-      <td><ul class="examples">${(x.examples||[]).map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></td>
+      <td><ul class="examples">${(x.examples||[]).slice(0,1).map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></td>
     </tr>`).join("")}</tbody></table></div>`;
+
+  const related=data.related_but_not_synonyms||[];
+  document.getElementById("related").innerHTML = related.length
+    ? `<h2>Related, but not true synonyms</h2>
+       <div class="notice">${related.map(x=>`<div style="margin-bottom:7px"><b>${escapeHtml(x.word)}</b> — ${escapeHtml(x.why_not_synonym)}</div>`).join("")}</div>`
+    : "";
 }
 function saveSyn(index){
   if(!current)return;
