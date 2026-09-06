@@ -55,7 +55,7 @@ table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:au
 <div class="app">
   <div class="top">
     <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
-    <div class="beta">AI V6.3 Lite · Enrichment UI</div>
+    <div class="beta">AI V6.4 Lite · Sync Delete Fix</div>
   </div>
 
   <div class="grid">
@@ -626,7 +626,18 @@ function renderSaved(){
   document.getElementById("masteredCount").textContent=saved.filter(s=>(s.reviews||0)>=4).length;
   renderReview();
 }
-function removeSaved(i){saved.splice(i,1);localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();renderSaved()}
+function removeSaved(i){
+  const item=saved[i];
+  if(!item) return;
+  try{
+    const id=window.NuanceSync?.itemId?.(item) || String(item.id||"");
+    if(id) window.NuanceSync?.markDeleted?.(id);
+  }catch(e){}
+  saved.splice(i,1);
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+  window.NuanceSync?.schedulePush?.();
+  renderSaved();
+}
 function renderReview(){
   const b=document.getElementById("reviewBox");
   const s=saved.find(x=>(x.due||0)<=Date.now())||saved[0];
@@ -714,6 +725,7 @@ tags();renderSaved();
 const NuanceSync = (() => {
   const CODE_KEY = "nuance_sync_code";
   const STORAGE_KEY = "nuance_v2_saved";
+  const DELETED_KEY = "nuance_v2_deleted";
   let timer = null;
   let busy = false;
 
@@ -735,6 +747,17 @@ const NuanceSync = (() => {
     try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{return []}
   }
 
+  function localDeleted(){
+    try{
+      const x=JSON.parse(localStorage.getItem(DELETED_KEY)||"{}");
+      return x && typeof x==="object" && !Array.isArray(x) ? x : {};
+    }catch{return {}}
+  }
+
+  function saveDeleted(obj){
+    localStorage.setItem(DELETED_KEY, JSON.stringify(obj||{}));
+  }
+
   function saveLocal(deck){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deck||[]));
     try{ saved = deck||[]; renderSaved(); }catch(e){}
@@ -747,15 +770,33 @@ const NuanceSync = (() => {
     return `${a}|${b}`;
   }
 
-  function merge(local, remote){
+  function itemTime(x){
+    return Math.max(
+      Number(x?.last_seen_at)||0,
+      Number(x?.enriched_at)||0,
+      Number(x?.added_at)||0,
+      Number(x?.updated_at)||0
+    );
+  }
+
+  function mergeDeleted(a={}, b={}){
+    const out={...(a||{})};
+    for(const [id,ts] of Object.entries(b||{})){
+      out[id]=Math.max(Number(out[id])||0, Number(ts)||0);
+    }
+    return out;
+  }
+
+  function merge(local, remote, deleted={}){
     const m=new Map();
     for(const x of [...(remote||[]), ...(local||[])]){
+      if(!x || typeof x!=="object") continue;
       const id=itemId(x);
       if(!id) continue;
       const old=m.get(id);
       if(!old){m.set(id,{...x,id});continue}
       const oldRev=old.reviews||0, newRev=x.reviews||0;
-      const newer=(x.last_seen_at||x.added_at||0)>=(old.last_seen_at||old.added_at||0)?x:old;
+      const newer=itemTime(x)>=itemTime(old)?x:old;
       m.set(id,{
         ...old,...newer,id,
         reviews:Math.max(oldRev,newRev),
@@ -764,7 +805,22 @@ const NuanceSync = (() => {
         ease:Math.max(old.ease||2.5,x.ease||2.5)
       });
     }
+
+    // A deletion wins over any older copy of the item.
+    for(const [id,x] of [...m.entries()]){
+      const deletedAt=Number(deleted?.[id])||0;
+      if(deletedAt && deletedAt>=itemTime(x)){
+        m.delete(id);
+      }
+    }
     return [...m.values()];
+  }
+
+  function markDeleted(id){
+    if(!id) return;
+    const d=localDeleted();
+    d[id]=Math.max(Number(d[id])||0, Date.now());
+    saveDeleted(d);
   }
 
   async function connect(){
@@ -795,15 +851,21 @@ const NuanceSync = (() => {
     busy=true;
     status(`<b>Syncing…</b><br>${v}`);
     try{
+      const localD=localDeleted();
       const r=await fetch("/api/sync",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({code:v, deck:localDeck()})
+        body:JSON.stringify({code:v, deck:localDeck(), tombstones:localD})
       });
       const data=await r.json();
       if(!r.ok) throw new Error(data.error||"Sync failed.");
-      const merged=merge(localDeck(), data.deck||[]);
+
+      const mergedDeleted=mergeDeleted(localD, data.tombstones||{});
+      saveDeleted(mergedDeleted);
+
+      const merged=merge(localDeck(), data.deck||[], mergedDeleted);
       saveLocal(merged);
+
       status(`<b>Synced.</b><br>${merged.length} vocabulary item${merged.length===1?"":"s"} · ${new Date().toLocaleTimeString()}`,"ok");
     }catch(e){
       status(`<b>Sync failed.</b><br>${String(e.message||e)}`,"error");
@@ -828,7 +890,7 @@ const NuanceSync = (() => {
     }
   }
 
-  return {connect,generateCode,syncNow,schedulePush,init};
+  return {connect,generateCode,syncNow,schedulePush,init,itemId,markDeleted};
 })();
 window.NuanceSync=NuanceSync;
 window.addEventListener("load",()=>NuanceSync.init());
