@@ -23,7 +23,24 @@ function itemId(x){
   return `${a}|${b}`;
 }
 
-function merge(a=[], b=[]){
+function itemTime(x){
+  return Math.max(
+    Number(x?.last_seen_at)||0,
+    Number(x?.enriched_at)||0,
+    Number(x?.added_at)||0,
+    Number(x?.updated_at)||0
+  );
+}
+
+function mergeTombstones(a={}, b={}){
+  const out={...(a||{})};
+  for(const [id,ts] of Object.entries(b||{})){
+    out[id]=Math.max(Number(out[id])||0, Number(ts)||0);
+  }
+  return out;
+}
+
+function mergeDeck(a=[], b=[], tombstones={}){
   const m=new Map();
   for(const x of [...a,...b]){
     if(!x || typeof x!=="object") continue;
@@ -31,7 +48,7 @@ function merge(a=[], b=[]){
     if(!id) continue;
     const old=m.get(id);
     if(!old){m.set(id,{...x,id});continue}
-    const newer=(x.last_seen_at||x.added_at||0)>=(old.last_seen_at||old.added_at||0)?x:old;
+    const newer=itemTime(x)>=itemTime(old)?x:old;
     m.set(id,{
       ...old,...newer,id,
       reviews:Math.max(old.reviews||0,x.reviews||0),
@@ -39,6 +56,13 @@ function merge(a=[], b=[]){
       due:Math.max(old.due||0,x.due||0),
       ease:Math.max(old.ease||2.5,x.ease||2.5)
     });
+  }
+
+  for(const [id,x] of [...m.entries()]){
+    const deletedAt=Number(tombstones?.[id])||0;
+    if(deletedAt && deletedAt>=itemTime(x)){
+      m.delete(id);
+    }
   }
   return [...m.values()];
 }
@@ -61,20 +85,56 @@ export default async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"POST only"});
   if(!URL || !TOKEN) return res.status(500).json({error:"Cloud database is not configured yet."});
 
-  const {code,deck}=req.body||{};
+  const {code,deck,tombstones={}}=req.body||{};
   if(!safeCode(code)) return res.status(400).json({error:"Invalid sync code."});
   if(!Array.isArray(deck)) return res.status(400).json({error:"Invalid vocabulary deck."});
+  if(!tombstones || typeof tombstones!=="object" || Array.isArray(tombstones)){
+    return res.status(400).json({error:"Invalid deletion data."});
+  }
 
   try{
     const key=keyFor(code);
     const raw=await redis(["GET",key]);
-    let remote=[];
+
+    let remoteDeck=[];
+    let remoteTombstones={};
+
     if(raw){
-      try{remote=JSON.parse(raw)}catch{remote=[]}
+      try{
+        const parsed=JSON.parse(raw);
+
+        // Backward compatibility: V6.3 and earlier stored only an array.
+        if(Array.isArray(parsed)){
+          remoteDeck=parsed;
+        }else if(parsed && typeof parsed==="object"){
+          remoteDeck=Array.isArray(parsed.deck)?parsed.deck:[];
+          remoteTombstones=(parsed.tombstones && typeof parsed.tombstones==="object")
+            ? parsed.tombstones : {};
+        }
+      }catch{
+        remoteDeck=[];
+        remoteTombstones={};
+      }
     }
-    const merged=merge(remote,deck);
-    await redis(["SET",key,JSON.stringify(merged)]);
-    return res.status(200).json({ok:true,deck:merged,count:merged.length});
+
+    const mergedTombstones=mergeTombstones(remoteTombstones,tombstones);
+    const mergedDeck=mergeDeck(remoteDeck,deck,mergedTombstones);
+
+    const payload={
+      version:2,
+      deck:mergedDeck,
+      tombstones:mergedTombstones,
+      updated_at:Date.now()
+    };
+
+    await redis(["SET",key,JSON.stringify(payload)]);
+
+    return res.status(200).json({
+      ok:true,
+      deck:mergedDeck,
+      tombstones:mergedTombstones,
+      count:mergedDeck.length
+    });
   }catch(e){
     console.error(e);
     return res.status(500).json({error:"Cloud sync failed. Please try again."});
