@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b63f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nuance">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Nuance V2</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#161922;--muted:#6f7685;--line:#e7e9ef;--accent:#5b63f6;--accent2:#8b73ff;--good:#177a57}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:1100px;margin:auto;padding:18px 14px 70px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:27px;font-weight:900}.sub{color:var(--muted);font-size:13px}
+.beta{background:#eceeff;color:#5057dc;border-radius:999px;padding:7px 10px;font-weight:800;font-size:12px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:18px}@media(max-width:850px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 8px 28px rgba(20,25,45,.05)}
+textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:15px;padding:14px;font-size:16px;resize:vertical;outline:none}
+button{border:0;border-radius:13px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}.ghost{background:#f1f2f7;color:#404754}.small{padding:8px 10px;font-size:12px}
+.row,.tags{display:flex;gap:8px;flex-wrap:wrap}.tag{padding:9px 11px;border-radius:999px;background:#f2f3f7;font-size:13px;cursor:pointer}.tag.active{background:#eceeff;color:#5057dc;font-weight:800}
+h2{font-size:17px;margin:20px 0 10px}.muted{color:var(--muted)}input[type=range]{width:100%;accent-color:var(--accent)}.labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.notice{background:#fff9e8;border:1px solid #f0dda0;border-radius:14px;padding:12px;font-size:13px;line-height:1.45}
+.hero{margin-top:15px;border:1px solid var(--line);border-radius:17px;padding:15px}.target{font-size:24px;font-weight:900}.meaning{font-size:15px;line-height:1.5;color:#596171;margin-top:5px}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.pill{font-size:11px;background:#f0f1ff;color:#5158da;border-radius:999px;padding:6px 8px;font-weight:800}
+.result{border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}.rhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.word{font-size:20px;font-weight:900}.score{font-size:11px;background:#f0f1ff;color:#5158da;border-radius:999px;padding:6px 8px}
+.example{background:#fafafe;border-radius:12px;padding:10px;font-size:14px;line-height:1.45;margin-top:8px}.why{font-size:13px;color:#606878;line-height:1.45;margin-top:8px}
+table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:16px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:10px 11px;font-size:12px}th{background:#f8f9fc;color:#596170;font-size:10px;text-transform:uppercase}.examples{margin:0;padding-left:16px;min-width:250px}.examples li{margin-bottom:5px;line-height:1.35}.best{display:inline-block;margin-top:5px;background:#eef8f3;color:var(--good);font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}
+.saved{border-bottom:1px solid var(--line);padding:11px 0}.saved:last-child{border-bottom:0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f8f9fc;border:1px solid var(--line);border-radius:14px;padding:12px}.stat b{display:block;font-size:22px}
+.loading{display:none;margin-top:12px}.loading.show{display:block}.error{background:#fff0f0;border:1px solid #f0caca;color:#8a3030;border-radius:13px;padding:11px;margin-top:12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
+    <div class="beta">AI V2</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin-top:0">Paste a word, phrase, or sentence</h2>
+      <textarea id="text" placeholder="Try: flurry of&#10;or: A flurry of announcements followed the meeting.">A flurry of announcements followed the meeting.</textarea>
+
+      <h2>Intensity target</h2>
+      <input id="intensity" type="range" min="1" max="5" value="3">
+      <div class="labels"><span>Mild</span><span>Moderate</span><span>Strong</span><span>Very strong</span><span>Extreme</span></div>
+
+      <h2>Situation</h2>
+      <div id="tags" class="tags"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="primary" onclick="analyze()">Analyze with AI</button>
+        <button class="ghost" onclick="pasteText()">Paste</button>
+      </div>
+
+      <div id="loading" class="notice loading">Analyzing meaning, register, intensity and nearby alternatives…</div>
+      <div id="error"></div>
+      <div id="analysis"></div>
+      <div id="results"></div>
+
+      <h2>Synonym snapshot</h2>
+      <div class="muted" style="font-size:13px;margin:-4px 0 10px">Sequenced from highest to lowest fit for the selected situation and intensity.</div>
+      <div id="summary"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="stats">
+          <div class="stat"><span class="muted">Saved</span><b id="savedCount">0</b></div>
+          <div class="stat"><span class="muted">Due</span><b id="dueCount">0</b></div>
+          <div class="stat"><span class="muted">Mastered</span><b id="masteredCount">0</b></div>
+        </div>
+        <h2>Saved vocabulary</h2>
+        <div id="savedList"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">Daily review</h2>
+        <div id="reviewBox" class="muted">Save a word or phrase to begin reviews.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">V2 status</h2>
+        <div class="notice">
+          Arbitrary words and phrases now work through the AI backend. Vocabulary is still stored locally on this device in V2. Cross-device cloud sync comes next.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const contexts=["Casual Conversation","Professional Email","Academic Paper","Creative Writing","Journalism"];
+let activeContext="Professional Email";
+let current=null;
+let saved=JSON.parse(localStorage.getItem("nuance_v2_saved")||"[]");
+
+function tags(){
+  const b=document.getElementById("tags"); b.innerHTML="";
+  contexts.forEach(c=>{
+    const x=document.createElement("div"); x.className="tag"+(c===activeContext?" active":""); x.textContent=c;
+    x.onclick=()=>{activeContext=c;tags()}; b.appendChild(x)
+  })
+}
+async function pasteText(){
+  try{document.getElementById("text").value=await navigator.clipboard.readText()}
+  catch(e){alert("Clipboard access is blocked. Tap the text box and paste manually.")}
+}
+async function analyze(){
+  const text=document.getElementById("text").value.trim();
+  const intensity=Number(document.getElementById("intensity").value);
+  if(!text)return;
+  document.getElementById("loading").classList.add("show");
+  document.getElementById("error").innerHTML="";
+  document.getElementById("analysis").innerHTML="";
+  document.getElementById("results").innerHTML="";
+  document.getElementById("summary").innerHTML="";
+  try{
+    const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,intensity,situation:activeContext})});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"Analysis failed.");
+    current=data;
+    render(data);
+  }catch(e){
+    document.getElementById("error").innerHTML=`<div class="error">${escapeHtml(e.message)}</div>`;
+  }finally{
+    document.getElementById("loading").classList.remove("show");
+  }
+}
+function render(data){
+  const a=document.getElementById("analysis");
+  a.innerHTML=`<div class="hero">
+    <div class="target">${escapeHtml(data.target)}</div>
+    <div class="meaning">${escapeHtml(data.meaning_in_context)}</div>
+    <div class="meta">
+      <span class="pill">Intensity ${data.detected_intensity}/5</span>
+      <span class="pill">${escapeHtml(data.register)}</span>
+      <span class="pill">${escapeHtml(data.part_of_speech)}</span>
+    </div>
+    ${data.original_context?`<div class="example"><b>Original context:</b> ${escapeHtml(data.original_context)}</div>`:""}
+    ${data.simpler_rewrite?`<div class="example"><b>Simpler rewrite:</b> ${escapeHtml(data.simpler_rewrite)}</div>`:""}
+  </div>`;
+
+  const rows=[...(data.synonyms||[])].sort((x,y)=>y.fit_score-x.fit_score);
+  const results=document.getElementById("results");
+  results.innerHTML=rows.slice(0,5).map((x,i)=>`<div class="result">
+    <div class="rhead"><div class="word">${escapeHtml(x.word)}</div><div class="score">${i===0?"#1 ":""}${x.fit_score}% fit</div></div>
+    <div class="why">${escapeHtml(x.key_difference)}</div>
+    <div class="meta">
+      <span class="pill">Intensity ${x.intensity}/5</span>
+      <span class="pill">${escapeHtml(x.tone)}</span>
+      <span class="pill">${escapeHtml(x.situation_fit)}</span>
+    </div>
+    <div class="example">${escapeHtml(x.examples[0]||"")}</div>
+    <div class="row" style="margin-top:9px"><button class="ghost small" onclick="saveSyn(${i})">＋ Save</button></div>
+  </div>`).join("");
+
+  document.getElementById("summary").innerHTML=`<div class="tablewrap"><table>
+    <thead><tr><th>Word</th><th>Fit</th><th>Intensity</th><th>Tone</th><th>Situation</th><th>Difference</th><th>Examples</th></tr></thead>
+    <tbody>${rows.map((x,i)=>`<tr>
+      <td><b>${escapeHtml(x.word)}</b>${i===0?'<br><span class="best">#1 Best fit</span>':''}</td>
+      <td>${x.fit_score}%</td><td>${x.intensity}/5</td><td>${escapeHtml(x.tone)}</td><td>${escapeHtml(x.situation_fit)}</td>
+      <td>${escapeHtml(x.key_difference)}</td>
+      <td><ul class="examples">${(x.examples||[]).map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+function saveSyn(index){
+  if(!current)return;
+  const rows=[...(current.synonyms||[])].sort((x,y)=>y.fit_score-x.fit_score);
+  const x=rows[index]; if(!x)return;
+  const id=(current.target+"|"+x.word+"|"+activeContext).toLowerCase();
+  if(saved.some(s=>s.id===id))return;
+  saved.push({id,target:current.target,word:x.word,meaning:current.meaning_in_context,context:current.original_context||document.getElementById("text").value,
+    situation:activeContext,intensity:x.intensity,tone:x.tone,difference:x.key_difference,examples:x.examples||[],
+    due:Date.now(),interval:1,ease:2.5,reviews:0});
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); renderSaved();
+}
+function renderSaved(){
+  const box=document.getElementById("savedList");
+  box.innerHTML=saved.length?saved.map((s,i)=>`<div class="saved"><b>${escapeHtml(s.word)}</b> <span class="muted">← ${escapeHtml(s.target)}</span>
+    <div class="muted" style="font-size:12px;margin-top:3px">${escapeHtml(s.situation)} · ${s.intensity}/5</div>
+    <div class="row" style="margin-top:6px"><button class="ghost small" onclick="removeSaved(${i})">Remove</button></div></div>`).join("")
+    :'<div class="muted">No saved vocabulary yet.</div>';
+  document.getElementById("savedCount").textContent=saved.length;
+  document.getElementById("dueCount").textContent=saved.filter(s=>(s.due||0)<=Date.now()).length;
+  document.getElementById("masteredCount").textContent=saved.filter(s=>(s.reviews||0)>=4).length;
+  renderReview();
+}
+function removeSaved(i){saved.splice(i,1);localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));renderSaved()}
+function renderReview(){
+  const b=document.getElementById("reviewBox");
+  const s=saved.find(x=>(x.due||0)<=Date.now())||saved[0];
+  if(!s){b.className="muted";b.innerHTML="Save a word or phrase to begin reviews.";return}
+  b.className="";
+  b.innerHTML=`<div><b>Which word best replaces “${escapeHtml(s.target)}”</b> in this situation?</div>
+    <div class="example" style="margin-top:8px">${escapeHtml(s.context||"")}</div>
+    <button class="ghost small" style="margin-top:9px" onclick="showReview('${s.id.replace(/'/g,"&#39;")}')">Show answer</button>
+    <div id="reviewAnswer"></div>`;
+}
+function showReview(id){
+  const s=saved.find(x=>x.id===id);if(!s)return;
+  document.getElementById("reviewAnswer").innerHTML=`<div class="example"><b>${escapeHtml(s.word)}</b><br>${escapeHtml(s.difference)}</div>
+  <div class="row" style="margin-top:8px">
+    <button class="ghost small" onclick="grade('${id}',1)">Again</button><button class="ghost small" onclick="grade('${id}',3)">Hard</button>
+    <button class="ghost small" onclick="grade('${id}',4)">Good</button><button class="primary small" onclick="grade('${id}',5)">Easy</button>
+  </div>`;
+}
+function grade(id,q){
+  const i=saved.findIndex(x=>x.id===id);if(i<0)return;
+  let s=saved[i]; if(q<3)s.interval=1; else{s.ease=Math.max(1.3,(s.ease||2.5)+(0.1-(5-q)*(0.08+(5-q)*0.02)));s.interval=Math.max(1,Math.round((s.interval||1)*s.ease))}
+  s.reviews=(s.reviews||0)+1;s.due=Date.now()+s.interval*86400000;saved[i]=s;
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));renderSaved();
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js"));
+tags();renderSaved();
+</script>
+</body>
+</html>
