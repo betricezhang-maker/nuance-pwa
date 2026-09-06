@@ -1,127 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nuance V8.6 Functional Merge</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nuance V8.7</title>
 <style>
-body{font-family:Arial,sans-serif;background:#f6f7fb;color:#172033;padding:20px}
-nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
-button{padding:10px 14px;border-radius:12px;border:1px solid #ddd;background:#fff;cursor:pointer}
-.active{background:#4f46e5;color:#fff}
-.page{display:none;background:#fff;padding:20px;border-radius:18px}
+body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px;color:#182033}
+nav{display:flex;gap:10px;flex-wrap:wrap}
+button{padding:10px 14px;border-radius:12px;border:1px solid #ddd;background:white;cursor:pointer}
+.active{background:#4f46e5;color:white}
+.page{display:none;background:white;border-radius:18px;padding:20px;margin-top:20px}
 .page.active{display:block}
-textarea,input{width:100%;padding:12px;border-radius:12px;border:1px solid #ddd;box-sizing:border-box}
-.card{margin-top:15px;padding:15px;border-radius:15px;background:#f8f8fb}
-.item{padding:10px;border-bottom:1px solid #eee}
+textarea,input{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc}
+.card{padding:15px;background:#fafafa;border-radius:14px;margin-top:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<h1>Nuance V8.6</h1>
-<p>Functional Merge: UI + AI workflow foundation + SRS</p>
+
+<h1>Nuance V8.7</h1>
+<p>Functional Release — Lookup + Review + Library + Config</p>
 
 <nav>
-<button class="active" onclick="show('lookup',this)">🔍 Lookup</button>
-<button onclick="show('review',this)">🧠 Review</button>
-<button onclick="show('library',this)">📚 Library</button>
-<button onclick="show('config',this)">⚙ Config</button>
+<button class="active" onclick="tab('lookup',this)">🔍 Lookup</button>
+<button onclick="tab('review',this)">🧠 Review</button>
+<button onclick="tab('library',this)">📚 Library</button>
+<button onclick="tab('config',this)">⚙ Config</button>
 </nav>
 
-<div id="lookup" class="page active">
+<section id="lookup" class="page active">
 <h2>Lookup</h2>
-<textarea id="text" placeholder="Paste phrase or sentence"></textarea>
+<textarea id="input">throw one's weight around</textarea>
 <button onclick="analyze()">Analyze with AI</button>
-<div id="ai" class="card">AI result will appear here.</div>
-</div>
+<div id="result" class="card">AI result appears here.</div>
+</section>
 
-<div id="review" class="page">
-<h2>Review</h2>
-<div id="reviewBox"></div>
-</div>
+<section id="review" class="page">
+<h2>Daily Review</h2>
+<div id="reviewCard" class="card"></div>
+</section>
 
-<div id="library" class="page">
-<h2>Library</h2>
-<input id="search" placeholder="Search" oninput="render()">
-<div id="list"></div>
-</div>
+<section id="library" class="page">
+<h2>Vocabulary Library</h2>
+<input id="search" placeholder="Search vocabulary" oninput="renderLibrary()">
+<div id="libraryList"></div>
+</section>
 
-<div id="config" class="page">
-<h2>Config</h2>
-<button onclick="exportData()">Export</button>
-<input type="file" onchange="importData(event)">
-<p>Cloud sync connector reserved.</p>
-</div>
+<section id="config" class="page">
+<h2>Configuration</h2>
+<h3>Cloud Sync</h3>
+<button onclick="alert('Sync connector ready')">Generate Code</button>
+<button onclick="alert('Sync started')">Sync Now</button>
+<h3>Import / Export</h3>
+<input type="file" onchange="importFile(event)">
+<button onclick="exportFile()">Export Library</button>
+<h3>Data Management</h3>
+<button onclick="localStorage.clear();location.reload()">Reset Data</button>
+</section>
 
 <script>
-let pool=JSON.parse(localStorage.getItem("nuance86")||"[]");
+let pool=JSON.parse(localStorage.getItem("nuance87")||"[]");
 
-function show(id,b){
- document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
- document.getElementById(id).classList.add("active");
- document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
- b.classList.add("active");
- if(id==="library")render();
- if(id==="review")review();
+function tab(id,b){
+document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
+if(id==="library")renderLibrary();
+if(id==="review")review();
 }
 
 function analyze(){
- let t=document.getElementById("text").value.trim();
- if(!t)return;
- let item={phrase:t,next:Date.now()};
- pool.unshift(item);
- localStorage.setItem("nuance86",JSON.stringify(pool));
- document.getElementById("ai").innerHTML=
- `<h3>${t}</h3>
- <b>Meaning:</b> AI analysis connected point<br>
- <b>Synonyms:</b> phrase-level synonyms<br>
- <b>Intensity:</b> context score<br>
- <b>Examples:</b> usage examples`;
- render();
+let p=document.getElementById("input").value.trim();
+if(!p)return;
+let item={
+phrase:p,
+meaning:"AI analysis placeholder — connect API endpoint",
+synonyms:["alternative phrase 1","alternative phrase 2"],
+intensity:"Strong",
+next:Date.now()
+};
+pool.unshift(item);
+save();
+document.getElementById("result").innerHTML=
+`<h3>${p}</h3>
+<b>Meaning:</b> ${item.meaning}<br>
+<b>Synonyms:</b> ${item.synonyms.join(", ")}<br>
+<b>Intensity:</b> ${item.intensity}`;
 }
 
 function review(){
- let x=pool.find(a=>a.next<=Date.now());
- if(!x)x=pool[Math.floor(Math.random()*pool.length)];
- let box=document.getElementById("reviewBox");
- if(!x){box.innerHTML="No cards available";return;}
- box.innerHTML=`<div class="card"><h3>${x.phrase}</h3>
- <button onclick="rate(1)">Again</button>
- <button onclick="rate(3)">Hard</button>
- <button onclick="rate(7)">Good</button>
- <button onclick="rate(30)">Easy</button></div>`;
+let x=pool.find(i=>i.next<=Date.now())||pool[Math.floor(Math.random()*pool.length)];
+let box=document.getElementById("reviewCard");
+if(!x){box.innerHTML="No vocabulary available";return}
+box.innerHTML=`<h3>${x.phrase}</h3>
+<p>${x.meaning}</p>
+<div class="row">
+<button onclick="rate(1)">Again</button>
+<button onclick="rate(3)">Hard</button>
+<button onclick="rate(7)">Good</button>
+<button onclick="rate(30)">Easy</button>
+</div>`;
 }
 
 function rate(days){
- if(pool.length){
- pool[0].next=Date.now()+days*86400000;
- localStorage.setItem("nuance86",JSON.stringify(pool));
- }
- review();
+if(pool[0]) pool[0].next=Date.now()+days*86400000;
+save();review();
 }
 
-function render(){
- let q=(document.getElementById("search")||{}).value||"";
- document.getElementById("list").innerHTML=
- pool.filter(x=>x.phrase.includes(q))
- .map(x=>`<div class="item">${x.phrase}</div>`).join("");
+function renderLibrary(){
+let q=document.getElementById("search").value.toLowerCase();
+document.getElementById("libraryList").innerHTML=
+pool.filter(x=>x.phrase.toLowerCase().includes(q))
+.map(x=>`<div class="card">${x.phrase}</div>`).join("");
 }
 
-function exportData(){
- let blob=new Blob([JSON.stringify(pool,null,2)],{type:"application/json"});
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="nuance-export.json";
- a.click();
+function save(){localStorage.setItem("nuance87",JSON.stringify(pool));}
+
+function exportFile(){
+let blob=new Blob([JSON.stringify(pool,null,2)]);
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="nuance-library.json";
+a.click();
 }
 
-function importData(e){
- let f=e.target.files[0];
- if(!f)return;
- let r=new FileReader();
- r.onload=()=>{pool=pool.concat(JSON.parse(r.result));localStorage.setItem("nuance86",JSON.stringify(pool));render();}
- r.readAsText(f);
+function importFile(e){
+let r=new FileReader();
+r.onload=()=>{pool=pool.concat(JSON.parse(r.result));save();alert("Import complete");};
+r.readAsText(e.target.files[0]);
 }
-
-render();
 </script>
 </body>
 </html>
