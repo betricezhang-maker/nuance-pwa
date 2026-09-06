@@ -1,134 +1,1120 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nuance V8.7</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b63f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nuance">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Nuance V2</title>
 <style>
-body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px;color:#182033}
-nav{display:flex;gap:10px;flex-wrap:wrap}
-button{padding:10px 14px;border-radius:12px;border:1px solid #ddd;background:white;cursor:pointer}
-.active{background:#4f46e5;color:white}
-.page{display:none;background:white;border-radius:18px;padding:20px;margin-top:20px}
-.page.active{display:block}
-textarea,input{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc}
-.card{padding:15px;background:#fafafa;border-radius:14px;margin-top:15px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
+:root{--bg:#f6f7fb;--card:#fff;--text:#161922;--muted:#6f7685;--line:#e7e9ef;--accent:#5b63f6;--accent2:#8b73ff;--good:#177a57}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:1100px;margin:auto;padding:18px 14px 70px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:27px;font-weight:900}.sub{color:var(--muted);font-size:13px}
+.beta{background:#eceeff;color:#5057dc;border-radius:999px;padding:7px 10px;font-weight:800;font-size:12px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:18px}@media(max-width:850px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 8px 28px rgba(20,25,45,.05)}
+textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:15px;padding:14px;font-size:16px;resize:vertical;outline:none}
+button{border:0;border-radius:13px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}.ghost{background:#f1f2f7;color:#404754}.small{padding:8px 10px;font-size:12px}
+.row,.tags{display:flex;gap:8px;flex-wrap:wrap}.tag{padding:9px 11px;border-radius:999px;background:#f2f3f7;font-size:13px;cursor:pointer}.tag.active{background:#eceeff;color:#5057dc;font-weight:800}
+h2{font-size:17px;margin:20px 0 10px}.muted{color:var(--muted)}input[type=range]{width:100%;accent-color:var(--accent)}.labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.notice{background:#fff9e8;border:1px solid #f0dda0;border-radius:14px;padding:12px;font-size:13px;line-height:1.45}
+.hero{margin-top:15px;border:1px solid var(--line);border-radius:17px;padding:15px}.target{font-size:24px;font-weight:900}.meaning{font-size:15px;line-height:1.5;color:#596171;margin-top:5px}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.pill{font-size:11px;background:#f0f1ff;color:#5158da;border-radius:999px;padding:6px 8px;font-weight:800}
+.result{border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}.rhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.word{font-size:20px;font-weight:900}.score{font-size:11px;background:#f0f1ff;color:#5158da;border-radius:999px;padding:6px 8px}
+.example{background:#fafafe;border-radius:12px;padding:10px;font-size:14px;line-height:1.45;margin-top:8px}.why{font-size:13px;color:#606878;line-height:1.45;margin-top:8px}
+table{width:100%;border-collapse:collapse;min-width:900px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:16px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:10px 11px;font-size:12px}th{background:#f8f9fc;color:#596170;font-size:10px;text-transform:uppercase}.examples{margin:0;padding-left:16px;min-width:250px}.examples li{margin-bottom:5px;line-height:1.35}.best{display:inline-block;margin-top:5px;background:#eef8f3;color:var(--good);font-size:10px;font-weight:800;border-radius:999px;padding:4px 7px}
+.saved{border-bottom:1px solid var(--line);padding:11px 0}.saved:last-child{border-bottom:0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f8f9fc;border:1px solid var(--line);border-radius:14px;padding:12px}.stat b{display:block;font-size:22px}
+.loading{display:none;margin-top:12px}.loading.show{display:block}.error{background:#fff0f0;border:1px solid #f0caca;color:#8a3030;border-radius:13px;padding:11px;margin-top:12px;font-size:13px}
+
+.import-zone{border:1.5px dashed #cfd3e3;border-radius:16px;padding:14px;background:#fafbff;margin-top:10px}
+.library-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.lib-chip{padding:7px 10px;border-radius:999px;background:#f1f2f7;font-size:12px;font-weight:700;cursor:pointer}
+.lib-chip.active{background:#eceeff;color:#5057dc}
+.lib-search{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 11px;font-size:14px;outline:none;margin-top:8px}
+.source-badge{display:inline-block;margin-left:6px;background:#f5f6f8;color:#687080;border-radius:999px;padding:3px 6px;font-size:9px;font-weight:800;text-transform:uppercase}
+.progressbar{height:8px;background:#eceef4;border-radius:99px;overflow:hidden;margin-top:8px}.progressbar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.import-report{font-size:12px;line-height:1.5;margin-top:8px}
+
+.enrich-badge{display:inline-block;background:#eef8f3;color:#177a57;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800;margin-left:6px}
+.item-click{cursor:pointer}
+.detail-panel{margin-top:10px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafbff}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+@media(max-width:650px){.detail-grid{grid-template-columns:1fr}}
+.detail-box{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px}
+.detail-title{font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.syn-row{border-top:1px solid var(--line);padding:8px 0}
+.syn-row:first-child{border-top:0}
+
+
+.history-box{
+ background:#f3f4f6;
+ color:#666;
+ border-radius:12px;
+ padding:10px;
+ margin-top:8px;
+ font-size:13px;
+}
+.history-item{
+ padding:7px 0;
+ border-bottom:1px solid rgba(0,0,0,.06);
+ cursor:pointer;
+}
+.history-item:last-child{border-bottom:0}
+</style>
+
+<style>
+#reviewBox{
+ min-height:auto !important;
+}
+.review-box{
+ padding:12px !important;
+}
 </style>
 </head>
 <body>
+<div class="app">
+  <div class="top">
+    <div><div class="brand">Nuance</div><div class="sub">Read → Understand → Compare → Retain</div></div>
+    <div class="beta">AI V7.3 · Smart Review + Tabs</div>
+  </div>
 
-<h1>Nuance V8.7</h1>
-<p>Functional Release — Lookup + Review + Library + Config</p>
-
-<nav>
-<button class="active" onclick="tab('lookup',this)">🔍 Lookup</button>
-<button onclick="tab('review',this)">🧠 Review</button>
-<button onclick="tab('library',this)">📚 Library</button>
-<button onclick="tab('config',this)">⚙ Config</button>
-</nav>
-
-<section id="lookup" class="page active">
-<h2>Lookup</h2>
-<textarea id="input">throw one's weight around</textarea>
-<button onclick="analyze()">Analyze with AI</button>
-<div id="result" class="card">AI result appears here.</div>
-</section>
-
-<section id="review" class="page">
+  <div class="grid">
+    
+<div class="review-box" style="border:1px solid #ddd;border-radius:16px;padding:16px;margin:16px 0">
 <h2>Daily Review</h2>
-<div id="reviewCard" class="card"></div>
-</section>
+<div id="reviewSummary">Loading...</div>
+<button class="primary" onclick="startReview()">Start Review</button>
+</div>
+<style>
+.review-card{border:1px solid #ddd;border-radius:16px;padding:16px;margin-top:12px}
+.review-buttons button{margin:5px}
+</style>
+<div class="card">
+      <h2 style="margin-top:0">Paste a word, phrase, or sentence</h2>
+      <textarea id="text" placeholder="Try: flurry of&#10;or: A flurry of announcements followed the meeting.">A flurry of announcements followed the meeting.</textarea>
 
-<section id="library" class="page">
-<h2>Vocabulary Library</h2>
-<input id="search" placeholder="Search vocabulary" oninput="renderLibrary()">
-<div id="libraryList"></div>
-</section>
+      <h2>Intensity target</h2>
+      <input id="intensity" type="range" min="1" max="5" value="3">
+      <div class="labels"><span>Mild</span><span>Moderate</span><span>Strong</span><span>Very strong</span><span>Extreme</span></div>
 
-<section id="config" class="page">
-<h2>Configuration</h2>
-<h3>Cloud Sync</h3>
-<button onclick="alert('Sync connector ready')">Generate Code</button>
-<button onclick="alert('Sync started')">Sync Now</button>
-<h3>Import / Export</h3>
-<input type="file" onchange="importFile(event)">
-<button onclick="exportFile()">Export Library</button>
-<h3>Data Management</h3>
-<button onclick="localStorage.clear();location.reload()">Reset Data</button>
-</section>
+      <h2>Situation</h2>
+      <div id="tags" class="tags"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="primary" onclick="analyze()">Analyze with AI</button>
+        <button class="ghost" onclick="pasteText()">Paste</button>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:8px">✓ Every successful lookup is automatically added to your spaced-repetition pool.</div>
+
+      <div id="loading" class="notice loading">Analyzing meaning, register, intensity and nearby alternatives…</div>
+      <div id="error"></div>
+      <div id="analysis"></div>
+      <div id="results"></div>
+
+      <h2>Best-fit synonym snapshot</h2>
+      <div class="muted" style="font-size:13px;margin:-4px 0 10px">Sequenced from highest to lowest fit for the selected situation and intensity.</div>
+      <div id="summary"></div><div id="related"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2 style="margin-top:0">Bulk import vocabulary</h2>
+        <div class="muted" style="font-size:13px">Import a PDF, TXT, CSV or JSON collection. PDF import detects large phrase headings like your Idioms & Expressions file. Imported items enter the SRS pool immediately.</div>
+        <div class="import-zone">
+          <input id="bulkFile" type="file" accept=".pdf,.txt,.csv,.json,application/pdf,text/plain,text/csv,application/json" style="width:100%">
+          <div class="row" style="margin-top:9px">
+            <button class="primary small" onclick="importVocabularyFile()">Import file</button>
+            <button class="ghost small" onclick="exportLibrary()">Export library</button>
+          </div>
+          <div id="importStatus" class="import-report muted"></div>
+          <div id="importProgress" class="progressbar" style="display:none"><span style="width:0%"></span></div>
+        </div>
+      </div>
+
+      
+      <div class="card" id="syncCard" style="margin-bottom:16px">
+        <h2 style="margin-top:0">Cloud sync</h2>
+        <div class="notice" id="syncStatus">
+          <b>Not connected.</b><br>
+          Enter the same private sync code on your Windows PC, iPhone and iPad.
+        </div>
+
+        <div style="margin-top:10px">
+          <input id="syncCodeInput" type="text" placeholder="Example: NUANCE-AB12-CD34"
+                 style="width:100%;border:1px solid var(--line);border-radius:13px;padding:11px;font-size:15px">
+        </div>
+
+        <div class="row" style="margin-top:9px">
+          <button class="primary small" onclick="NuanceSync.connect()">Connect</button>
+          <button class="ghost small" onclick="NuanceSync.generateCode()">Generate code</button>
+          <button class="ghost small" onclick="NuanceSync.syncNow()">Sync now</button>
+        </div>
+
+        <div class="muted" style="font-size:12px;margin-top:8px">
+          Keep this code private. Anyone with the code can access the same Nuance vocabulary pool.
+        </div>
+      </div>
+<div class="card" style="margin-top:16px">
+        <div class="stats">
+          <div class="stat"><span class="muted">Saved</span><b id="savedCount">0</b></div>
+          <div class="stat"><span class="muted">Due</span><b id="dueCount">0</b></div>
+          <div class="stat"><span class="muted">Mastered</span><b id="masteredCount">0</b></div>
+        </div>
+        <h2>Vocabulary library</h2>
+        <input id="librarySearch" class="lib-search" placeholder="Search your vocabulary..." oninput="renderSaved()">
+        <div class="library-toolbar" id="libraryFilters">
+          <div class="lib-chip active" data-filter="all" onclick="setLibraryFilter('all')">All</div>
+          <div class="lib-chip" data-filter="lookup" onclick="setLibraryFilter('lookup')">Looked up</div>
+          <div class="lib-chip" data-filter="imported" onclick="setLibraryFilter('imported')">Imported</div>
+          <div class="lib-chip" data-filter="due" onclick="setLibraryFilter('due')">Due</div>
+          <div class="lib-chip" data-filter="mastered" onclick="setLibraryFilter('mastered')">Mastered</div>
+        </div>
+        <div id="savedList"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">Daily review</h2>
+        <div id="reviewBox" class="muted">Save a word or phrase to begin reviews.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">Library + SRS status</h2>
+        <div class="notice">
+          Every lookup is auto-saved. You can also bulk-import PDF, TXT, CSV or JSON vocabulary collections directly into the same SRS pool.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-let pool=JSON.parse(localStorage.getItem("nuance87")||"[]");
+const contexts=["Casual Conversation","Professional Email","Academic Paper","Creative Writing","Journalism"];
+let activeContext="Professional Email";
+let current=null;
+let saved=JSON.parse(localStorage.getItem("nuance_v2_saved")||"[]");
+let libraryFilter="all";
+let pdfjsLibPromise=null;
 
-function tab(id,b){
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
-b.classList.add("active");
-if(id==="library")renderLibrary();
-if(id==="review")review();
+function tags(){
+  const b=document.getElementById("tags"); b.innerHTML="";
+  contexts.forEach(c=>{
+    const x=document.createElement("div"); x.className="tag"+(c===activeContext?" active":""); x.textContent=c;
+    x.onclick=()=>{activeContext=c;tags()}; b.appendChild(x)
+  })
+}
+async function pasteText(){
+  try{document.getElementById("text").value=await navigator.clipboard.readText()}
+  catch(e){alert("Clipboard access is blocked. Tap the text box and paste manually.")}
+}
+async function analyze(){
+  const text=document.getElementById("text").value.trim();
+  const intensity=Number(document.getElementById("intensity").value);
+  if(!text)return;
+  document.getElementById("loading").classList.add("show");
+  document.getElementById("error").innerHTML="";
+  document.getElementById("analysis").innerHTML="";
+  document.getElementById("results").innerHTML="";
+  document.getElementById("summary").innerHTML=""; document.getElementById("related").innerHTML="";
+  try{
+    const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,intensity,situation:activeContext})});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"Analysis failed.");
+    current=data;
+    autoSaveLookup(data, text, intensity, activeContext);
+    render(data);
+  }catch(e){
+    document.getElementById("error").innerHTML=`<div class="error">${escapeHtml(e.message)}</div>`;
+  }finally{
+    document.getElementById("loading").classList.remove("show");
+  }
+}
+function render(data){
+  const a=document.getElementById("analysis");
+  a.innerHTML=`<div class="hero">
+    <div class="target">${escapeHtml(data.target)}</div>
+    <div class="meaning">${escapeHtml(data.meaning_in_context)}</div>
+    <div class="meta">
+      <span class="pill">Intensity ${data.detected_intensity}/5</span>
+      <span class="pill">${escapeHtml(data.register)}</span>
+      <span class="pill">${escapeHtml(data.part_of_speech)}</span>
+    </div>
+    ${data.original_context?`<div class="example"><b>Original context:</b> ${escapeHtml(data.original_context)}</div>`:""}
+    ${data.simpler_rewrite?`<div class="example"><b>Simpler rewrite:</b> ${escapeHtml(data.simpler_rewrite)}</div>`:""}
+  </div>`;
+
+  const rows=[...(data.synonyms||[])].sort((x,y)=>y.fit_score-x.fit_score);
+  const results=document.getElementById("results");
+  results.innerHTML=rows.slice(0,5).map((x,i)=>`<div class="result">
+    <div class="rhead"><div class="word">${escapeHtml(x.word)}</div><div class="score">${i===0?"#1 ":""}${x.fit_score}% fit</div></div>
+    <div class="why">${escapeHtml(x.key_difference)}</div>
+    <div class="meta">
+      <span class="pill">Intensity ${x.intensity}/5</span>
+      <span class="pill">${escapeHtml(x.tone)}</span>
+      <span class="pill">${escapeHtml(x.situation_fit)}</span>
+    </div>
+    <div class="example">${escapeHtml(x.examples[0]||"")}</div>
+    
+  </div>`).join("");
+
+  document.getElementById("summary").innerHTML=`<div class="tablewrap"><table>
+    <thead><tr><th>Word</th><th>Fit</th><th>Intensity</th><th>Tone</th><th>Situation</th><th>Difference</th><th>Example</th></tr></thead>
+    <tbody>${rows.map((x,i)=>`<tr>
+      <td><b>${escapeHtml(x.word)}</b>${i===0?'<br><span class="best">#1 Best fit</span>':''}</td>
+      <td>${x.fit_score}%</td><td>${x.intensity}/5</td><td>${escapeHtml(x.tone)}</td><td>${escapeHtml(x.situation_fit)}</td>
+      <td>${escapeHtml(x.key_difference)}</td>
+      <td><ul class="examples">${(x.examples||[]).slice(0,1).map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></td>
+    </tr>`).join("")}</tbody></table></div>`;
+
+  const related=data.related_but_not_synonyms||[];
+  document.getElementById("related").innerHTML = related.length
+    ? `<h2>Related, but not true synonyms</h2>
+       <div class="notice">${related.map(x=>`<div style="margin-bottom:7px"><b>${escapeHtml(x.word)}</b> — ${escapeHtml(x.why_not_synonym)}</div>`).join("")}</div>`
+    : "";
+}
+function normalizeKey(s){
+  return String(s||"").trim().toLowerCase().replace(/\s+/g," ");
 }
 
-function analyze(){
-let p=document.getElementById("input").value.trim();
-if(!p)return;
-let item={
-phrase:p,
-meaning:"AI analysis placeholder — connect API endpoint",
-synonyms:["alternative phrase 1","alternative phrase 2"],
-intensity:"Strong",
-next:Date.now()
-};
-pool.unshift(item);
-save();
-document.getElementById("result").innerHTML=
-`<h3>${p}</h3>
-<b>Meaning:</b> ${item.meaning}<br>
-<b>Synonyms:</b> ${item.synonyms.join(", ")}<br>
-<b>Intensity:</b> ${item.intensity}`;
+function autoSaveLookup(data, sourceText, requestedIntensity, situation){
+  if(!data || !data.target) return;
+
+  const targetKey=normalizeKey(data.target);
+  const sourceKey=normalizeKey(sourceText);
+  const id=(targetKey+"|"+sourceKey).slice(0,500);
+
+  const synonyms=[...(data.synonyms||[])].sort((a,b)=>(b.fit_score||0)-(a.fit_score||0));
+  const best=synonyms[0]||null;
+
+  const item={
+    id,
+    target:data.target,
+    lookup_text:sourceText,
+    meaning:data.meaning_in_context||"",
+    original_context:data.original_context||sourceText,
+    simpler_rewrite:data.simpler_rewrite||"",
+    part_of_speech:data.part_of_speech||"",
+    register:data.register||"",
+    detected_intensity:data.detected_intensity||requestedIntensity,
+    requested_intensity:requestedIntensity,
+    situation,
+    synonyms,
+    related_but_not_synonyms:data.related_but_not_synonyms||[],
+    best_synonym:best?.word||"",
+    best_difference:best?.key_difference||"",
+    examples:best?.examples||[],
+    due:Date.now(),
+    interval:1,
+    ease:2.5,
+    reviews:0,
+    added_at:Date.now(),
+    last_seen_at:Date.now(),
+    source_type:"lookup",
+    source_file:""
+  };
+
+  const existing=saved.findIndex(s=>s.id===id);
+
+  if(existing>=0){
+    // Preserve SRS progress while refreshing the latest language analysis.
+    const old=saved[existing];
+    item.due=old.due ?? Date.now();
+    item.interval=old.interval ?? 1;
+    item.ease=old.ease ?? 2.5;
+    item.reviews=old.reviews ?? 0;
+    item.added_at=old.added_at ?? Date.now();
+    saved[existing]={...old,...item,last_seen_at:Date.now()};
+  }else{
+    saved.unshift(item);
+  }
+
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();
+  renderSaved();
 }
 
-function review(){
-let x=pool.find(i=>i.next<=Date.now())||pool[Math.floor(Math.random()*pool.length)];
-let box=document.getElementById("reviewCard");
-if(!x){box.innerHTML="No vocabulary available";return}
-box.innerHTML=`<h3>${x.phrase}</h3>
-<p>${x.meaning}</p>
-<div class="row">
-<button onclick="rate(1)">Again</button>
-<button onclick="rate(3)">Hard</button>
-<button onclick="rate(7)">Good</button>
-<button onclick="rate(30)">Easy</button>
-</div>`;
+
+function setLibraryFilter(filter){
+  libraryFilter=filter;
+  document.querySelectorAll(".lib-chip").forEach(x=>x.classList.toggle("active",x.dataset.filter===filter));
+  renderSaved();
+}
+function normalizeImportedTarget(s){
+  return String(s||"").replace(/\s+/g," ").trim();
+}
+function importedId(target){
+  return "import|"+normalizeKey(target);
+}
+function addImportedItems(items,fileName){
+  let added=0,updated=0,skipped=0;
+  const now=Date.now();
+  for(const raw of items){
+    const target=normalizeImportedTarget(raw.target||raw.word||raw.phrase||"");
+    if(!target || target.length>180){skipped++;continue;}
+    const meaning=String(raw.meaning||raw.definition||raw.notes||"").trim();
+    const examples=Array.isArray(raw.examples)?raw.examples.filter(Boolean):[];
+    const id=importedId(target);
+    const existing=saved.findIndex(s=>s.id===id || (s.source_type==="imported" && normalizeKey(s.target)===normalizeKey(target)));
+    const item={
+      id,target,lookup_text:target,meaning,original_context:examples[0]||"",simpler_rewrite:"",
+      part_of_speech:raw.part_of_speech||"phrase",register:raw.register||"",detected_intensity:raw.intensity||3,
+      requested_intensity:raw.intensity||3,situation:raw.situation||"General",synonyms:raw.synonyms||[],
+      related_but_not_synonyms:[],best_synonym:"",best_difference:"",examples,
+      due:now,interval:1,ease:2.5,reviews:0,added_at:now,last_seen_at:now,
+      source_type:"imported",source_file:fileName||"Imported file",needs_enrichment:true
+    };
+    if(existing>=0){
+      const old=saved[existing];
+      saved[existing]={...old,...item,due:old.due??now,interval:old.interval??1,ease:old.ease??2.5,reviews:old.reviews??0,added_at:old.added_at??now};
+      updated++;
+    }else{saved.push(item);added++;}
+  }
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();
+  renderSaved();
+  return {added,updated,skipped};
+}
+async function getPdfJs(){
+  if(!pdfjsLibPromise){
+    pdfjsLibPromise=import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.mjs").then(m=>{
+      m.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.mjs";
+      return m;
+    });
+  }
+  return pdfjsLibPromise;
+}
+function cleanPdfText(s){
+  return String(s||"").replace(/\s+/g," ").replace(/\s+([,.;:!?])/g,"$1").trim();
+}
+function splitDefinitionExamples(body){
+  body=cleanPdfText(body);
+  if(!body)return {meaning:"",examples:[]};
+  // Preserve source wording; heuristically treat the first sentence(s) as definition and the rest as examples/context.
+  const sentences=body.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[body];
+  let meaning=""; let examples=[];
+  if(sentences.length){
+    meaning=sentences[0].trim();
+    if(/^\d+\./.test(meaning) && sentences.length>1) meaning=(meaning+" "+sentences[1]).trim();
+    examples=sentences.slice(1).map(x=>x.trim()).filter(x=>x.length>15).slice(0,3);
+  }
+  return {meaning,examples};
+}
+async function parsePdfFile(file){
+  const pdfjs=await getPdfJs();
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  const pdf=await pdfjs.getDocument({data:bytes}).promise;
+  let entries=[]; let current=null;
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const content=await page.getTextContent();
+    // Sort in visual reading order.
+    const items=[...content.items].filter(x=>x.str&&x.str.trim()).sort((a,b)=>{
+      const ay=Math.round(a.transform[5]); const by=Math.round(b.transform[5]);
+      if(Math.abs(by-ay)>3)return by-ay;
+      return a.transform[4]-b.transform[4];
+    });
+    let line=[]; let lastY=null; let lines=[];
+    for(const it of items){
+      const y=Math.round(it.transform[5]);
+      if(lastY!==null && Math.abs(y-lastY)>3){lines.push(line);line=[];}
+      line.push(it);lastY=y;
+    }
+    if(line.length)lines.push(line);
+    for(const li of lines){
+      const text=cleanPdfText(li.map(x=>x.str).join(" "));
+      const maxH=Math.max(...li.map(x=>Math.abs(x.height||x.transform?.[0]||0)));
+      const avgH=li.reduce((s,x)=>s+Math.abs(x.height||0),0)/li.length;
+      // The user's Idioms & Expressions PDF uses ~24pt headings vs ~13pt body text.
+      const isHeading=maxH>=20 || avgH>=19;
+      if(isHeading && text.length<=180){
+        if(current)entries.push(current);
+        current={target:text,body:""};
+      }else if(current){
+        current.body+=(current.body?" ":"")+text;
+      }
+    }
+  }
+  if(current)entries.push(current);
+  return entries.map(e=>{
+    const parts=splitDefinitionExamples(e.body);
+    return {target:e.target,meaning:parts.meaning,examples:parts.examples};
+  }).filter(e=>e.target);
+}
+function parseTxt(text){
+  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  return lines.map(line=>{
+    const parts=line.split(/\t|\s+-\s+|\s+—\s+|\s*\|\s*/);
+    return {target:parts[0]||"",meaning:parts.slice(1).join(" — ")};
+  });
+}
+function parseCsv(text){
+  const lines=text.split(/\r?\n/).filter(x=>x.trim());
+  if(!lines.length)return [];
+  function row(s){
+    let out=[],cur="",q=false;
+    for(let i=0;i<s.length;i++){
+      const c=s[i];
+      if(c==='"'){if(q&&s[i+1]==='"'){cur+='"';i++;}else q=!q;}
+      else if(c===','&&!q){out.push(cur);cur="";} else cur+=c;
+    }
+    out.push(cur);return out.map(x=>x.trim());
+  }
+  const first=row(lines[0]);
+  const lower=first.map(x=>x.toLowerCase());
+  const hasHeader=lower.some(x=>["word","phrase","target","idiom","expression","meaning","definition"].includes(x));
+  const ti=Math.max(0,lower.findIndex(x=>["word","phrase","target","idiom","expression"].includes(x)));
+  const mi=lower.findIndex(x=>["meaning","definition","note","notes"].includes(x));
+  return lines.slice(hasHeader?1:0).map(s=>{const r=row(s);return {target:r[ti]||r[0]||"",meaning:mi>=0?(r[mi]||""):(r[1]||"")};});
+}
+async function importVocabularyFile(){
+  const input=document.getElementById("bulkFile");
+  const status=document.getElementById("importStatus");
+  const bar=document.getElementById("importProgress");
+  const file=input.files?.[0];
+  if(!file){status.textContent="Choose a file first.";return;}
+  status.textContent="Reading "+file.name+"…";bar.style.display="block";bar.querySelector("span").style.width="20%";
+  try{
+    let items=[]; const name=file.name.toLowerCase();
+    if(name.endsWith(".pdf")||file.type==="application/pdf"){
+      bar.querySelector("span").style.width="35%";items=await parsePdfFile(file);bar.querySelector("span").style.width="75%";
+    }else if(name.endsWith(".json")){
+      const data=JSON.parse(await file.text());items=Array.isArray(data)?data:(data.items||data.vocabulary||[]);
+    }else if(name.endsWith(".csv")){items=parseCsv(await file.text());}
+    else{items=parseTxt(await file.text());}
+    const result=addImportedItems(items,file.name);bar.querySelector("span").style.width="100%";
+    status.innerHTML=`<b>Import complete.</b> Detected ${items.length} entries · Added ${result.added} · Updated ${result.updated} · Skipped ${result.skipped}. All imported items are now in the SRS pool.`;
+    setTimeout(()=>bar.style.display="none",900);
+  }catch(err){
+    console.error(err);status.innerHTML=`<span style="color:#8a3030">Import failed: ${escapeHtml(err.message||String(err))}</span>`;bar.style.display="none";
+  }
+}
+function exportLibrary(){
+  const blob=new Blob([JSON.stringify(saved,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="nuance-vocabulary-library.json";a.click();URL.revokeObjectURL(url);
+}
+async function enrichImported(id){
+  const i=saved.findIndex(x=>x.id===id); if(i<0)return;
+  const s=saved[i];
+  const promptText=s.meaning?`${s.target}. Context/definition: ${s.meaning}`:s.target;
+  const btn=document.getElementById("enrich-"+cssSafeId(id)); if(btn){btn.disabled=true;btn.textContent="Enriching…";}
+  try{
+    const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:promptText,intensity:s.detected_intensity||3,situation:s.situation==="General"?"Casual Conversation":s.situation})});
+    const data=await r.json(); if(!r.ok)throw new Error(data.error||"AI enrichment failed");
+    const syn=[...(data.synonyms||[])].sort((a,b)=>(b.fit_score||0)-(a.fit_score||0));
+    saved[i]={...s,meaning:data.meaning_in_context||s.meaning,part_of_speech:data.part_of_speech||s.part_of_speech,register:data.register||s.register,
+      detected_intensity:data.detected_intensity||s.detected_intensity,synonyms:syn,related_but_not_synonyms:data.related_but_not_synonyms||[],
+      best_synonym:syn[0]?.word||"",best_difference:syn[0]?.key_difference||"",examples:(syn[0]?.examples||s.examples||[]),needs_enrichment:false,last_seen_at:Date.now()};
+    localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();renderSaved();renderReview();
+  }catch(e){alert(e.message||String(e));if(btn){btn.disabled=false;btn.textContent="Enrich with AI";}}
+}
+function cssSafeId(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,"_").slice(0,120)}
+
+
+function enrichmentFor(item){
+  if(!item) return null;
+  if(Array.isArray(item.synonyms) && item.synonyms.length) return item;
+  return null;
 }
 
-function rate(days){
-if(pool[0]) pool[0].next=Date.now()+days*86400000;
-save();review();
+function enrichmentHtml(item){
+  const e=enrichmentFor(item);
+  if(!e) return `<div class="muted" style="font-size:12px">No AI enrichment yet.</div>`;
+
+  const syns=[...(e.synonyms||[])].sort((a,b)=>(b.fit_score||0)-(a.fit_score||0));
+  const related=e.related_but_not_synonyms||[];
+
+  return `
+    <div class="detail-panel">
+      <div class="detail-grid">
+        <div class="detail-box">
+          <div class="detail-title">Intensity</div>
+          <b>${e.detected_intensity||e.requested_intensity||""}/5</b>
+        </div>
+        <div class="detail-box">
+          <div class="detail-title">Register</div>
+          <b>${escapeHtml(e.register||"")}</b>
+        </div>
+        <div class="detail-box">
+          <div class="detail-title">Part of speech</div>
+          <b>${escapeHtml(e.part_of_speech||"")}</b>
+        </div>
+      </div>
+
+      ${e.meaning?`<div class="example" style="margin-top:9px"><b>Meaning:</b> ${escapeHtml(e.meaning)}</div>`:""}
+
+      <div style="margin-top:10px"><b>Best-fit synonyms</b></div>
+      ${syns.length?syns.map((s,i)=>`
+        <div class="syn-row">
+          <div><b>${i===0?"#1 ":""}${escapeHtml(s.word||"")}</b> <span class="pill">${s.fit_score||0}% fit</span></div>
+          <div class="muted" style="font-size:12px;margin-top:3px">
+            Intensity ${s.intensity||""}/5 · ${escapeHtml(s.tone||"")} · ${escapeHtml(s.situation_fit||"")}
+          </div>
+          ${s.key_difference?`<div style="font-size:12px;margin-top:4px">${escapeHtml(s.key_difference)}</div>`:""}
+          ${(s.examples||[]).length?`<div class="example">${escapeHtml((s.examples||[])[0])}</div>`:""}
+        </div>
+      `).join(""):'<div class="muted" style="font-size:12px;margin-top:6px">No close synonyms returned.</div>'}
+
+      ${related.length?`
+        <div style="margin-top:10px"><b>Related, but not true synonyms</b></div>
+        ${related.map(r=>`<div style="font-size:12px;margin-top:4px"><b>${escapeHtml(r.word||"")}</b> — ${escapeHtml(r.why_not_synonym||"")}</div>`).join("")}
+      `:""}
+    </div>`;
 }
 
-function renderLibrary(){
-let q=document.getElementById("search").value.toLowerCase();
-document.getElementById("libraryList").innerHTML=
-pool.filter(x=>x.phrase.toLowerCase().includes(q))
-.map(x=>`<div class="card">${x.phrase}</div>`).join("");
+function toggleItemDetails(index){
+  const el=document.getElementById("item-detail-"+index);
+  if(!el) return;
+  const isOpen=el.style.display!=="none";
+  el.style.display=isOpen?"none":"block";
 }
 
-function save(){localStorage.setItem("nuance87",JSON.stringify(pool));}
+async function enrichItem(index){
+  const item=saved[index];
+  if(!item) return;
 
-function exportFile(){
-let blob=new Blob([JSON.stringify(pool,null,2)]);
-let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="nuance-library.json";
-a.click();
+  const btn=document.getElementById("enrich-btn-"+index);
+  const oldText=btn?.textContent;
+  if(btn){btn.disabled=true;btn.textContent="Enriching…";}
+
+  // IMPORTANT: for imported vocabulary, the header/phrase is the locked lexical target.
+  const lockedTarget=String(item.target||item.word||"").trim();
+  const contextText=String(
+    item.original_context||
+    item.lookup_text||
+    item.meaning||
+    lockedTarget
+  ).trim();
+
+  const intensity=item.requested_intensity||item.detected_intensity||item.intensity||3;
+  const situation=item.situation||activeContext||"Professional Email";
+
+  try{
+    const r=await fetch("/api/analyze",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        text:contextText,
+        target_override:lockedTarget || null,
+        intensity,
+        situation
+      })
+    });
+
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"AI enrichment failed.");
+
+    saved[index]={
+      ...item,
+      target:lockedTarget || data.target || item.target || item.word,
+      meaning:data.meaning_in_context||item.meaning||"",
+      original_context:item.original_context||data.original_context||contextText,
+      simpler_rewrite:data.simpler_rewrite||"",
+      part_of_speech:data.part_of_speech||"",
+      register:data.register||"",
+      detected_intensity:data.detected_intensity||intensity,
+      synonyms:data.synonyms||[],
+      related_but_not_synonyms:data.related_but_not_synonyms||[],
+      enriched:true,
+      enriched_at:Date.now(),
+      last_seen_at:Date.now()
+    };
+
+    localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+    window.NuanceSync?.schedulePush?.();
+    renderSaved();
+
+    setTimeout(()=>{
+      const detail=document.getElementById("item-detail-"+index);
+      if(detail) detail.style.display="block";
+    },0);
+
+  }catch(e){
+    alert(e.message||"AI enrichment failed.");
+    if(btn){btn.disabled=false;btn.textContent=oldText||"Enrich with AI";}
+  }
+}
+function renderSaved(){
+  const box=document.getElementById("savedList");
+  if(!box) return;
+
+  box.innerHTML=saved.length?saved.map((s,i)=>{
+    const enriched=!!(s.enriched || (Array.isArray(s.synonyms)&&s.synonyms.length));
+    const title=s.target||s.word||"";
+    const context=s.original_context||s.lookup_text||"";
+    return `<div class="saved item-click">
+      <div onclick="toggleItemDetails(${i})">
+        <b>${escapeHtml(title)}</b>
+        ${enriched?'<span class="enrich-badge">✓ Enriched</span>':''}
+        <div class="muted" style="font-size:12px;margin-top:4px">
+          ${escapeHtml(s.situation||"")} ${s.detected_intensity||s.intensity?`· Intensity ${s.detected_intensity||s.intensity}/5`:""}
+        </div>
+        ${s.meaning?`<div style="font-size:12px;margin-top:5px">${escapeHtml(s.meaning)}</div>`:""}
+        ${context?`<div class="muted" style="font-size:12px;margin-top:4px">Context: ${escapeHtml(context).slice(0,130)}${String(context).length>130?"…":""}</div>`:""}
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        ${enriched
+          ? `<button class="ghost small" onclick="event.stopPropagation();toggleItemDetails(${i})">Show details</button>`
+          : `<button class="primary small" id="enrich-btn-${i}" onclick="event.stopPropagation();enrichItem(${i})">Enrich with AI</button>`
+        }
+        <button class="ghost small" onclick="event.stopPropagation();removeSaved(${i})">Remove</button>
+      </div>
+
+      <div id="item-detail-${i}" style="display:${enriched?'block':'none'}">
+        ${enrichmentHtml(s)}
+      </div>
+    </div>`;
+  }).join("")
+  :'<div class="muted">Your vocabulary pool is empty. Every successful lookup will be added automatically.</div>';
+
+  document.getElementById("savedCount").textContent=saved.length;
+  document.getElementById("dueCount").textContent=saved.filter(s=>(s.due||0)<=Date.now()).length;
+  document.getElementById("masteredCount").textContent=saved.filter(s=>(s.reviews||0)>=4).length;
+  renderReview();
+}
+function removeSaved(i){
+  const item=saved[i];
+  if(!item) return;
+  try{
+    const id=window.NuanceSync?.itemId?.(item) || String(item.id||"");
+    if(id) window.NuanceSync?.markDeleted?.(id);
+  }catch(e){}
+  saved.splice(i,1);
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+  window.NuanceSync?.schedulePush?.();
+  renderSaved();
+}
+function renderReview(){
+  const b=document.getElementById("reviewBox");
+  const s=saved.find(x=>(x.due||0)<=Date.now())||saved[0];
+
+  if(!s){
+    b.className="muted";
+    b.innerHTML="Look up any word, phrase, or sentence to begin reviews.";
+    return;
+  }
+
+  b.className="";
+  const context=s.original_context||s.lookup_text||"";
+  b.innerHTML=`
+    <div class="muted" style="font-size:11px">DUE FOR REVIEW</div>
+    <div style="margin-top:5px"><b>What does “${escapeHtml(s.target||s.word||"")}” mean here?</b></div>
+    ${context?`<div class="example" style="margin-top:8px">${escapeHtml(context)}</div>`:""}
+    <button class="ghost small" style="margin-top:9px" onclick="showReview('${String(s.id).replace(/'/g,"&#39;")}')">Show answer</button>
+    <div id="reviewAnswer"></div>`;
+}
+function showReview(id){
+  const s=saved.find(x=>x.id===id);
+  if(!s)return;
+
+  const best=s.best_synonym
+    ? `<br><br><b>Closest alternative:</b> ${escapeHtml(s.best_synonym)}${s.best_difference?` — ${escapeHtml(s.best_difference)}`:""}`
+    : "";
+
+  document.getElementById("reviewAnswer").innerHTML=`
+    <div class="example">
+      <b>${escapeHtml(s.target||s.word||"")}</b><br>
+      ${escapeHtml(s.meaning||"")}
+      ${best}
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost small" onclick="grade('${id}',1)">Again</button>
+      <button class="ghost small" onclick="grade('${id}',3)">Hard</button>
+      <button class="ghost small" onclick="grade('${id}',4)">Good</button>
+      <button class="primary small" onclick="grade('${id}',5)">Easy</button>
+    </div>`;
+}
+function grade(id,q){
+  const i=saved.findIndex(x=>x.id===id);if(i<0)return;
+  let s=saved[i]; if(q<3)s.interval=1; else{s.ease=Math.max(1.3,(s.ease||2.5)+(0.1-(5-q)*(0.08+(5-q)*0.02)));s.interval=Math.max(1,Math.round((s.interval||1)*s.ease))}
+  s.reviews=(s.reviews||0)+1;s.due=Date.now()+s.interval*86400000;saved[i]=s;
+  localStorage.setItem("nuance_v2_saved",JSON.stringify(saved)); window.NuanceSync?.schedulePush?.();renderSaved();
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+
+      // Ask Safari/Chrome to check for a new service worker immediately.
+      await reg.update();
+
+      // If a new worker is already waiting, activate it now.
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+
+      reg.addEventListener("updatefound", () => {
+        const worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            worker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+
+      // Reload once when the new service worker takes control.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    } catch (e) {
+      console.warn("Service worker update failed:", e);
+    }
+  });
+}
+tags();renderSaved();
+
+const NuanceSync = (() => {
+  const CODE_KEY = "nuance_sync_code";
+  const STORAGE_KEY = "nuance_v2_saved";
+  const DELETED_KEY = "nuance_v2_deleted";
+  let timer = null;
+  let busy = false;
+
+  function code(){
+    return (localStorage.getItem(CODE_KEY)||"").trim();
+  }
+
+  function status(msg, kind="info"){
+    const el=document.getElementById("syncStatus");
+    if(!el) return;
+    el.innerHTML=(kind==="ok"?"✓ ":kind==="error"?"⚠ ":"")+msg;
+  }
+
+  function normalizeCode(v){
+    return String(v||"").trim().toUpperCase().replace(/\s+/g,"-");
+  }
+
+  function localDeck(){
+    try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{return []}
+  }
+
+  function localDeleted(){
+    try{
+      const x=JSON.parse(localStorage.getItem(DELETED_KEY)||"{}");
+      return x && typeof x==="object" && !Array.isArray(x) ? x : {};
+    }catch{return {}}
+  }
+
+  function saveDeleted(obj){
+    localStorage.setItem(DELETED_KEY, JSON.stringify(obj||{}));
+  }
+
+  function saveLocal(deck){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deck||[]));
+    try{ saved = deck||[]; renderSaved(); }catch(e){}
+  }
+
+  function itemId(x){
+    if(x?.id) return String(x.id);
+    const a=String(x?.target||x?.word||"").toLowerCase().trim();
+    const b=String(x?.original_context||x?.lookup_text||"").toLowerCase().trim();
+    return `${a}|${b}`;
+  }
+
+  function itemTime(x){
+    return Math.max(
+      Number(x?.last_seen_at)||0,
+      Number(x?.enriched_at)||0,
+      Number(x?.added_at)||0,
+      Number(x?.updated_at)||0
+    );
+  }
+
+  function mergeDeleted(a={}, b={}){
+    const out={...(a||{})};
+    for(const [id,ts] of Object.entries(b||{})){
+      out[id]=Math.max(Number(out[id])||0, Number(ts)||0);
+    }
+    return out;
+  }
+
+  function merge(local, remote, deleted={}){
+    const m=new Map();
+    for(const x of [...(remote||[]), ...(local||[])]){
+      if(!x || typeof x!=="object") continue;
+      const id=itemId(x);
+      if(!id) continue;
+      const old=m.get(id);
+      if(!old){m.set(id,{...x,id});continue}
+      const oldRev=old.reviews||0, newRev=x.reviews||0;
+      const newer=itemTime(x)>=itemTime(old)?x:old;
+      m.set(id,{
+        ...old,...newer,id,
+        reviews:Math.max(oldRev,newRev),
+        interval:Math.max(old.interval||1,x.interval||1),
+        due:Math.max(old.due||0,x.due||0),
+        ease:Math.max(old.ease||2.5,x.ease||2.5)
+      });
+    }
+
+    // A deletion wins over any older copy of the item.
+    for(const [id,x] of [...m.entries()]){
+      const deletedAt=Number(deleted?.[id])||0;
+      if(deletedAt && deletedAt>=itemTime(x)){
+        m.delete(id);
+      }
+    }
+    return [...m.values()];
+  }
+
+  function markDeleted(id){
+    if(!id) return;
+    const d=localDeleted();
+    d[id]=Math.max(Number(d[id])||0, Date.now());
+    saveDeleted(d);
+  }
+
+  async function connect(){
+    const input=document.getElementById("syncCodeInput");
+    const v=normalizeCode(input?.value);
+    if(!v){status("<b>Enter or generate a sync code first.</b>","error");return}
+    localStorage.setItem(CODE_KEY,v);
+    if(input) input.value=v;
+    status(`<b>Connected with sync code:</b> ${v}<br>Syncing…`);
+    await syncNow();
+  }
+
+  function generateCode(){
+    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let body="";
+    for(let i=0;i<8;i++) body+=chars[Math.floor(Math.random()*chars.length)];
+    const v=`NUANCE-${body.slice(0,4)}-${body.slice(4)}`;
+    const input=document.getElementById("syncCodeInput");
+    if(input) input.value=v;
+    localStorage.setItem(CODE_KEY,v);
+    status(`<b>New sync code generated:</b> ${v}<br>Use this same code on your other devices.`);
+  }
+
+  async function syncNow(){
+    if(busy) return;
+    const v=code();
+    if(!v){status("<b>Not connected.</b><br>Enter the same private code on each device.");return}
+    busy=true;
+    status(`<b>Syncing…</b><br>${v}`);
+    try{
+      const localD=localDeleted();
+      const r=await fetch("/api/sync",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code:v, deck:localDeck(), tombstones:localD})
+      });
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error||"Sync failed.");
+
+      const mergedDeleted=mergeDeleted(localD, data.tombstones||{});
+      saveDeleted(mergedDeleted);
+
+      const merged=merge(localDeck(), data.deck||[], mergedDeleted);
+      saveLocal(merged);
+
+      status(`<b>Synced.</b><br>${merged.length} vocabulary item${merged.length===1?"":"s"} · ${new Date().toLocaleTimeString()}`,"ok");
+    }catch(e){
+      status(`<b>Sync failed.</b><br>${String(e.message||e)}`,"error");
+    }finally{
+      busy=false;
+    }
+  }
+
+  function schedulePush(){
+    if(!code()) return;
+    clearTimeout(timer);
+    timer=setTimeout(syncNow,900);
+  }
+
+  function init(){
+    const v=code();
+    const input=document.getElementById("syncCodeInput");
+    if(input && v) input.value=v;
+    if(v){
+      status(`<b>Connected.</b><br>${v} · syncing…`);
+      syncNow();
+    }
+  }
+
+  return {connect,generateCode,syncNow,schedulePush,init,itemId,markDeleted};
+})();
+window.NuanceSync=NuanceSync;
+window.addEventListener("load",()=>NuanceSync.init());
+
+</script>
+
+<script>
+let reviewQueue=[], reviewIndex=0;
+
+function srsInit(i){
+ if(!i.nextReview)i.nextReview=Date.now();
+ if(!i.interval)i.interval=1;
+ if(!i.reviews)i.reviews=0;
+}
+function dueCount(){
+ saved.forEach(srsInit);
+ return saved.filter(x=>x.nextReview<=Date.now()).length;
+}
+function updateReviewSummary(){
+ let e=document.getElementById("reviewSummary");
+ if(e)e.innerHTML=dueCount()+" words waiting today";
+}
+function startReview(){
+ reviewQueue=saved.filter(x=>x.nextReview<=Date.now());
+ reviewIndex=0;
+ showReview();
+}
+function showReview(){
+ let box=document.getElementById("reviewBox");
+ if(reviewIndex>=reviewQueue.length){
+  box.innerHTML="<h2>🎉 Review completed</h2>";
+  return;
+ }
+ let x=reviewQueue[reviewIndex];
+ box.innerHTML=`
+ <h2>Review ${reviewIndex+1}/${reviewQueue.length}</h2>
+ <div class="review-card">
+ <h2>${x.target||x.word||""}</h2>
+ <p>${x.original_context||""}</p>
+ <button onclick="answer()">Show Answer</button>
+ <div id="ans"></div>
+ </div>`;
+}
+function answer(){
+ let x=reviewQueue[reviewIndex];
+ document.getElementById("ans").innerHTML=`
+ <p><b>Meaning:</b>${x.meaning||""}</p>
+ <p><b>Synonyms:</b>${(x.synonyms||[]).map(s=>s.word||s).join(", ")}</p>
+ <div class="review-buttons">
+ <button onclick="rate('again')">Again</button>
+ <button onclick="rate('hard')">Hard</button>
+ <button onclick="rate('good')">Good</button>
+ <button onclick="rate('easy')">Easy</button>
+ </div>`;
+}
+function rate(v){
+ let x=reviewQueue[reviewIndex];
+ let days={again:1,hard:2,good:7,easy:30};
+ x.reviews++;
+ x.interval=days[v];
+ x.nextReview=Date.now()+x.interval*86400000;
+ localStorage.setItem("nuance_v2_saved",JSON.stringify(saved));
+ window.NuanceSync?.schedulePush?.();
+ reviewIndex++;
+ showReview();
+}
+window.addEventListener("load",updateReviewSummary);
+</script>
+
+<script>
+function loadPasteHistory(){
+ const h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ const box=document.getElementById("pasteHistory");
+ if(!box)return;
+ box.innerHTML=h.slice(0,5).map((x,i)=>
+ `<div class="history-item" onclick="useHistory(${i})">${escapeHtml(x)}</div>`
+ ).join("") || "No recent searches";
+}
+function savePasteHistory(t){
+ if(!t)return;
+ let h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ h=[t,...h.filter(x=>x!==t)].slice(0,10);
+ localStorage.setItem("nuance_paste_history",JSON.stringify(h));
+}
+function useHistory(i){
+ let h=JSON.parse(localStorage.getItem("nuance_paste_history")||"[]");
+ let input=document.querySelector("textarea,input[type=text]");
+ if(input) input.value=h[i]||"";
+ hidePasteHistory();
+}
+function hidePasteHistory(){
+ const box=document.getElementById("pasteHistory");
+ if(box) box.style.display="none";
+}
+function showPasteHistory(){
+ const box=document.getElementById("pasteHistory");
+ if(box){
+  loadPasteHistory();
+  box.style.display="block";
+ }
+}
+document.addEventListener("click",function(e){
+ const box=document.getElementById("pasteHistory");
+ if(!box)return;
+ if(!e.target.closest("#pasteHistory") && !e.target.closest("textarea,input")){
+   box.style.display="none";
+ }
+});
+window.addEventListener("load",loadPasteHistory);
+</script>
+
+<script>
+(function(){
+let clearedOnce=false;
+
+function setupNuanceInput(){
+ const area=document.querySelector("textarea");
+ if(!area) return;
+
+ // Remove demo text on first focus only
+ area.addEventListener("focus",function(){
+   if(!clearedOnce && 
+      (area.value.includes("A flurry of announcements followed the meeting.") ||
+       area.value.includes("Try:"))){
+        area.value="";
+        clearedOnce=true;
+   }
+ },{once:false});
+
+ // Hide history when typing
+ area.addEventListener("input",function(){
+   const h=document.getElementById("pasteHistory");
+   if(h) h.style.display="none";
+ });
 }
 
-function importFile(e){
-let r=new FileReader();
-r.onload=()=>{pool=pool.concat(JSON.parse(r.result));save();alert("Import complete");};
-r.readAsText(e.target.files[0]);
+window.addEventListener("load",setupNuanceInput);
+})();
+</script>
+
+<style>
+.nuance-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.nuance-tabs button{border:1px solid #ddd;border-radius:999px;padding:8px 14px;background:#f5f5f5}
+.history-box{background:#f3f4f6!important;color:#666!important;border-radius:12px!important}
+</style>
+<div class="nuance-tabs">
+<button onclick="switchNuanceTab('lookup')">Lookup</button>
+<button onclick="switchNuanceTab('review')">Review</button>
+<button onclick="switchNuanceTab('library')">Library</button>
+<button onclick="switchNuanceTab('config')">Config</button>
+</div>
+<script>
+function switchNuanceTab(name){
+ document.querySelectorAll('.nuance-panel').forEach(x=>x.style.display='none');
+ let x=document.getElementById(name);
+ if(x)x.style.display='block';
 }
+
+function smartReviewStart(){
+ let pool=(typeof saved!=="undefined")?saved:[];
+ let due=pool.filter(x=>!x.nextReview || x.nextReview<=Date.now());
+
+ if(due.length===0){
+   due=[...pool].sort(()=>Math.random()-0.5).slice(0,10);
+   alert("No scheduled cards yet. Random test mode started.");
+ }
+ reviewQueue=due;
+ reviewIndex=0;
+ showReviewCard();
+}
+
+document.addEventListener("focusin",e=>{
+ if(e.target.tagName==="TEXTAREA"){
+   let h=document.getElementById("pasteHistory");
+   if(h)h.style.display="none";
+ }
+});
 </script>
 </body>
 </html>
